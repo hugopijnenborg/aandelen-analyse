@@ -1,0 +1,16 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0a0a0f;
+  --surface:  #111118;
+  --border:   #1e1e2e;
+  --orange:   #f97316;
+  --orange-dim: #c2601a;
+  --text:     #e8e8f0;
+  --muted:    #6b6b80;
+  --green:    #22c55e;
+  --yellow:   #eab308;
+  --red:      #ef4444;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
