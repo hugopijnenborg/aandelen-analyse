@@ -53,6 +53,23 @@ const METRICS = [
 
 const ZONE_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']
 
+const EINDOORDEEL_CONFIG = {
+  'STERK KOOPMOMENT':     { color: '#22c55e', bg: 'linear-gradient(135deg, #052010 0%, #071a0e 100%)', border: '#14532d', icon: '🚀', short: 'Sterk Koop' },
+  'KOOPMOMENT':           { color: '#84cc16', bg: 'linear-gradient(135deg, #0a1f02 0%, #0d1a05 100%)', border: '#1a4208', icon: '✅', short: 'Koop' },
+  'NEUTRAAL':             { color: '#eab308', bg: 'linear-gradient(135deg, #1a1400 0%, #1a1600 100%)', border: '#3a2e00', icon: '⚖️', short: 'Neutraal' },
+  'WACHT OP BETERE INSTAP': { color: '#f97316', bg: 'linear-gradient(135deg, #1a0900 0%, #1a0b00 100%)', border: '#3a1800', icon: '⏳', short: 'Wacht' },
+  'VERMIJD':              { color: '#ef4444', bg: 'linear-gradient(135deg, #1a0202 0%, #1a0404 100%)', border: '#3a0808', icon: '⛔', short: 'Vermijd' },
+}
+
+function detectEindoordeel(text) {
+  if (!text) return null
+  const labels = ['STERK KOOPMOMENT', 'WACHT OP BETERE INSTAP', 'KOOPMOMENT', 'NEUTRAAL', 'VERMIJD']
+  for (const l of labels) {
+    if (text.includes(l)) return l
+  }
+  return null
+}
+
 function scoreToLabel(s) {
   if (s === null) return { label: 'N/B', color: '#555566' }
   if (s >= 80) return { label: 'STERK', color: '#22c55e' }
@@ -64,8 +81,7 @@ function scoreToLabel(s) {
 
 function valueToPosition(value, range) {
   const [min, max] = range
-  const clamped = Math.max(min, Math.min(max, value))
-  return ((clamped - min) / (max - min)) * 100
+  return ((Math.max(min, Math.min(max, value)) - min) / (max - min)) * 100
 }
 
 function zoneToPercent(zoneVal, range) {
@@ -79,6 +95,7 @@ styleEl.textContent = `
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
   @keyframes markerIn { from { opacity:0; transform:translateX(-50%) scaleY(0) } to { opacity:1; transform:translateX(-50%) scaleY(1) } }
+  @keyframes slideIn { from { opacity:0; transform:translateX(-8px) } to { opacity:1; transform:translateX(0) } }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #080b0f; color: #d4d8e0; font-family: 'Inter', sans-serif; }
 
@@ -88,9 +105,8 @@ styleEl.textContent = `
   .ticker-name { font-family: 'JetBrains Mono', monospace; font-size: clamp(2.4rem, 6vw, 3.8rem); font-weight: 700; color: #fff; letter-spacing: -0.02em; line-height: 1; }
   .back-btn { background: transparent; border: 1px solid #1a1f2e; color: #555566; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: 'Inter', sans-serif; transition: all 0.15s; white-space: nowrap; }
   .back-btn:hover { border-color: #f97316; color: #f97316; }
-  .data-warning { background: #1a0f00; border: 1px solid #f97316; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; color: #f97316; font-size: 13px; line-height: 1.5; }
+  .data-warning { background: #1a0f00; border: 1px solid #f97316; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; color: #f97316; font-size: 13px; }
 
-  /* Markt sectie */
   .market-section { margin-bottom: 2rem; }
   .section-title { font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: #555566; margin-bottom: 12px; }
   .market-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #1a1f2e; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
@@ -98,15 +114,10 @@ styleEl.textContent = `
   .market-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #555566; margin-bottom: 6px; }
   .market-value { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: #e8eaf0; }
   .market-sub { font-size: 11px; color: #555566; margin-top: 3px; }
-  .positive { color: #22c55e; }
-  .negative { color: #ef4444; }
-
-  /* 52-week balk */
   .week52-bar { margin-top: 8px; position: relative; }
   .week52-track { height: 6px; background: linear-gradient(to right, #ef4444, #eab308, #22c55e); border-radius: 3px; }
   .week52-marker { position: absolute; top: -3px; transform: translateX(-50%); width: 3px; height: 12px; background: #fff; border-radius: 2px; box-shadow: 0 0 6px rgba(255,255,255,0.5); }
 
-  /* Metrics grid */
   .metrics-section { margin-bottom: 2rem; }
   .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1a1f2e; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
   .metric-cell { background: #0d1117; padding: 18px 20px 22px; }
@@ -115,7 +126,6 @@ styleEl.textContent = `
   .metric-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; padding: 2px 7px; border-radius: 3px; text-transform: uppercase; }
   .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 1.7rem; font-weight: 700; line-height: 1; margin-bottom: 4px; word-break: break-word; }
   .metric-desc { font-size: 11px; color: #444455; margin-bottom: 16px; }
-
   .band-container { position: relative; margin-bottom: 6px; }
   .band-track { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 1px; }
   .band-zone { flex: 1; border-radius: 2px; opacity: 0.35; }
@@ -126,19 +136,36 @@ styleEl.textContent = `
   .band-label { font-size: 9px; color: #333344; font-family: 'JetBrains Mono', monospace; }
   .band-label.active { color: #888899; }
 
-  .analyse-section { background: #0d1117; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
-  .analyse-header { padding: 16px 24px; border-bottom: 1px solid #1a1f2e; display: flex; align-items: center; gap: 10px; }
-  .analyse-dot { width: 8px; height: 8px; background: #f97316; border-radius: 50%; }
-  .analyse-title { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #f97316; }
-  .analyse-body { padding: 28px 24px; }
-  .analyse-body h1, .analyse-body h2, .analyse-body h3 { font-weight: 600; color: #e8eaf0; margin: 1.4em 0 0.5em; font-size: 1rem; }
-  .analyse-body h1:first-child, .analyse-body h2:first-child { margin-top: 0; font-size: 1.1rem; }
-  .analyse-body p { color: #8892a4; font-size: 14px; line-height: 1.75; margin-bottom: 0.8em; }
-  .analyse-body strong { color: #c8d0e0; }
-  .analyse-body ul, .analyse-body ol { padding-left: 1.4em; margin-bottom: 0.8em; }
-  .analyse-body li { color: #8892a4; font-size: 14px; line-height: 1.75; }
-  .analyse-body hr { border: none; border-top: 1px solid #1a1f2e; margin: 1.5em 0; }
+  /* Analyse sectie */
+  .analyse-section { border-radius: 10px; overflow: hidden; border: 1px solid #1a1f2e; }
+  .analyse-header { padding: 14px 24px; border-bottom: 1px solid #1a1f2e; background: #0d1117; display: flex; align-items: center; gap: 10px; }
+  .analyse-dot { width: 7px; height: 7px; background: #f97316; border-radius: 50%; }
+  .analyse-title { font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: #f97316; }
 
+  /* Eindoordeel banner */
+  .eindoordeel-banner { padding: 24px 28px; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid transparent; animation: slideIn 0.4s ease; }
+  .eindoordeel-icon { font-size: 2.2rem; line-height: 1; flex-shrink: 0; }
+  .eindoordeel-right { flex: 1; }
+  .eindoordeel-label { font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px; opacity: 0.6; }
+  .eindoordeel-verdict { font-family: 'JetBrains Mono', monospace; font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+
+  /* Analyse body */
+  .analyse-body { padding: 28px; background: #0d1117; }
+  .analyse-body h2 { font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #555566; margin: 2em 0 0.8em; padding-bottom: 8px; border-bottom: 1px solid #131820; }
+  .analyse-body h2:first-child { margin-top: 0; }
+  .analyse-body h3 { font-size: 13px; font-weight: 600; color: #c8d0e0; margin: 1.4em 0 0.5em; }
+  .analyse-body p { color: #7a8499; font-size: 14px; line-height: 1.85; margin-bottom: 0.8em; }
+  .analyse-body strong { color: #c8d0e0; font-weight: 600; }
+  .analyse-body em { color: #9aa3b4; font-style: italic; }
+  .analyse-body ul { padding-left: 0; margin-bottom: 0.8em; list-style: none; }
+  .analyse-body ul li { color: #7a8499; font-size: 14px; line-height: 1.85; padding-left: 20px; position: relative; }
+  .analyse-body ul li::before { content: '—'; position: absolute; left: 0; color: #333344; }
+  .analyse-body ul li strong { color: #c8d0e0; }
+  .analyse-body ol { padding-left: 1.4em; margin-bottom: 0.8em; }
+  .analyse-body ol li { color: #7a8499; font-size: 14px; line-height: 1.85; }
+  .analyse-body hr { border: none; border-top: 1px solid #131820; margin: 1.6em 0; }
+
+  /* Zoekpagina */
   .search-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: radial-gradient(ellipse 80% 60% at 50% -10%, #1a0d00 0%, #080b0f 55%); }
   .search-inner { max-width: 540px; width: 100%; text-align: center; }
   .search-eyebrow { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #f97316; border: 1px solid #3a1a00; background: #110900; padding: 4px 12px; border-radius: 20px; margin-bottom: 24px; }
@@ -160,7 +187,7 @@ styleEl.textContent = `
   .spinner { width: 24px; height: 24px; border: 2px solid #1a1f2e; border-top-color: #f97316; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
   .spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
 
-  @media (max-width: 600px) { .metrics-grid { grid-template-columns: 1fr; } .market-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .metrics-grid { grid-template-columns: 1fr; } .market-grid { grid-template-columns: 1fr 1fr; } .analyse-body { padding: 20px; } }
 `
 document.head.appendChild(styleEl)
 
@@ -264,12 +291,19 @@ function ResultPage({ result, onReset }) {
   const { ticker, analyse, raw_data: d } = result
   const values = [d?.pe_ratio, d?.eps, d?.debt_to_equity, d?.roe_percent, d?.profit_margin_percent, d?.revenue_growth_percent, d?.free_cash_flow_billions, d?.peg_ratio, d?.gross_margin_percent, d?.current_ratio]
   const isDataPoor = values.filter(v => v === null || v === undefined).length >= 5
-
   const ytdColor = d?.ytd_return_percent > 0 ? '#22c55e' : d?.ytd_return_percent < 0 ? '#ef4444' : '#555566'
+  const eindoordeel = detectEindoordeel(analyse)
+  const eoConfig = eindoordeel ? EINDOORDEEL_CONFIG[eindoordeel] : null
+
+  // Filter eindoordeel sectie uit de markdown zodat die niet dubbel staat
+  const analyseZonderEindoordeel = analyse
+    ? analyse.replace(/##\s*Eindoordeel[\s\S]*?(?=##|$)/i, '').trim()
+    : ''
 
   return (
     <div className="result-page">
       {isDataPoor && <div className="data-warning">⚠️ Beperkte data — mogelijk verlieslatend of recent beursgenoteerd. Traditionele metrics niet volledig toepasbaar.</div>}
+
       <header className="result-header">
         <div>
           <div className="ticker-eyebrow">Fundamentele Analyse</div>
@@ -278,7 +312,7 @@ function ResultPage({ result, onReset }) {
         <button className="back-btn" onClick={onReset}>← Nieuw aandeel</button>
       </header>
 
-      {/* Markt & timing sectie */}
+      {/* Markt & timing */}
       <div className="market-section">
         <div className="section-title">Markt & Timing</div>
         <div className="market-grid">
@@ -302,8 +336,6 @@ function ResultPage({ result, onReset }) {
             <div className="market-sub">Indicated annual yield</div>
           </div>
         </div>
-
-        {/* 52-week balk */}
         {d?.week52_high && d?.week52_low && (
           <div style={{ background: '#0d1117', border: '1px solid #1a1f2e', borderRadius: 10, padding: '16px 20px', marginTop: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -354,13 +386,25 @@ function ResultPage({ result, onReset }) {
         </div>
       </div>
 
+      {/* AI Analyse */}
       <div className="analyse-section">
         <div className="analyse-header">
           <span className="analyse-dot" />
           <span className="analyse-title">AI Beoordeling — {ticker}</span>
         </div>
+
+        {eoConfig && (
+          <div className="eindoordeel-banner" style={{ background: eoConfig.bg, borderBottom: `1px solid ${eoConfig.border}` }}>
+            <span className="eindoordeel-icon">{eoConfig.icon}</span>
+            <div className="eindoordeel-right">
+              <div className="eindoordeel-label" style={{ color: eoConfig.color }}>Eindoordeel</div>
+              <div className="eindoordeel-verdict" style={{ color: eoConfig.color }}>{eindoordeel}</div>
+            </div>
+          </div>
+        )}
+
         <div className="analyse-body">
-          <ReactMarkdown>{analyse}</ReactMarkdown>
+          <ReactMarkdown>{analyseZonderEindoordeel}</ReactMarkdown>
         </div>
       </div>
     </div>
