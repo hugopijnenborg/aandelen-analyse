@@ -261,7 +261,16 @@ function ScoreRing({ score }) {
 }
 
 function AIBlok({ ticker, analyse }) {
-  if (!analyse || typeof analyse !== 'object') return null
+  // Ondersteun zowel JSON object als string (fallback voor oude workflow versie)
+  if (!analyse) return null
+  if (typeof analyse === 'string') {
+    return (
+      <div className="ai">
+        <div className="aihdr"><span className="aidot" /><span className="aititle">AI Beoordeling — {ticker}</span></div>
+        <div style={{padding:'24px 28px',color:'#7a8399',fontSize:'14px',lineHeight:'1.85',background:'#0a0e16',whiteSpace:'pre-wrap'}}>{analyse}</div>
+      </div>
+    )
+  }
 
   const eo = analyse.eindoordeel?.trim().toUpperCase()
   const cfg = eo ? (OORDEEL[eo] || null) : null
