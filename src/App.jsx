@@ -5,7 +5,8 @@ const WEBHOOK = 'https://hugop123.app.n8n.cloud/webhook/aandelen-analyse'
 
 const METRICS = [
   { key: 'pe_ratio',               label: 'P/E Ratio',       suffix: 'x',  desc: 'Koers gedeeld door winst per aandeel',
-    score: v => v === null ? null : v < 15 ? 90 : v < 25 ? 70 : v < 35 ? 50 : v < 50 ? 30 : 15 },
+    score: v => v === null ? null : v < 0 ? 5 : v < 15 ? 90 : v < 25 ? 70 : v < 35 ? 50 : v < 50 ? 30 : 15,
+    format: v => v === null ? null : v < 0 ? `${v}x (verlies)` : `${v}x` },
   { key: 'eps',                    label: 'EPS',              suffix: '',   desc: 'Winst per aandeel (TTM)',
     score: v => v === null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
   { key: 'debt_to_equity',         label: 'Debt / Equity',   suffix: 'x',  desc: 'Verhouding schuld tot eigen vermogen',
@@ -196,9 +197,7 @@ function ResultPage({ result, onReset }) {
             const val = raw_data?.[m.key]
             const s = m.score(val)
             const { label, color } = scoreToLabel(s)
-            const displayVal = val !== null && val !== undefined
-              ? `${typeof val === 'number' ? val : val}${m.suffix}`
-              : '—'
+            const displayVal = val !== null && val !== undefined ? (m.format ? m.format(val) : `${val}${m.suffix}`) : '—'
 
             return (
               <div key={m.key} className="metric-cell">
