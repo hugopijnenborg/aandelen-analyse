@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
 
 const WEBHOOK = 'https://hugop123.app.n8n.cloud/webhook/aandelen-analyse'
 
@@ -7,84 +6,70 @@ const METRICS = [
   { key: 'pe_ratio', label: 'P/E Ratio', suffix: 'x', desc: 'Koers / winst per aandeel',
     range: [-20, 60], zones: [0, 15, 25, 35], lager_is_beter: true,
     bandLabels: ['Verlies', '< 15', '15–25', '25–35', '> 35'],
-    score: v => v === null ? null : v < 0 ? 5 : v < 15 ? 90 : v < 25 ? 70 : v < 35 ? 50 : v < 50 ? 30 : 15,
-    format: v => v === null ? null : v < 0 ? `${v}x (verlies)` : `${v}x` },
+    score: v => v == null ? null : v < 0 ? 5 : v < 15 ? 90 : v < 25 ? 70 : v < 35 ? 50 : v < 50 ? 30 : 15,
+    format: v => v == null ? null : v < 0 ? `${v}x (verlies)` : `${v}x` },
   { key: 'peg_ratio', label: 'PEG Ratio', suffix: 'x', desc: 'P/E gedeeld door groeipercentage',
     range: [0, 4], zones: [0.5, 1, 1.5, 2], lager_is_beter: true,
     bandLabels: ['< 0.5', '0.5–1', '1–1.5', '1.5–2', '> 2'],
-    score: v => v === null ? null : v < 0 ? 5 : v < 1 ? 90 : v < 1.5 ? 75 : v < 2 ? 55 : v < 3 ? 35 : 15 },
-  { key: 'price_to_book', label: 'Price/Book', suffix: 'x', desc: 'Koers / boekwaarde per aandeel',
+    score: v => v == null ? null : v < 0 ? 5 : v < 1 ? 90 : v < 1.5 ? 75 : v < 2 ? 55 : v < 3 ? 35 : 15 },
+  { key: 'price_to_book', label: 'Price / Book', suffix: 'x', desc: 'Koers / boekwaarde per aandeel',
     range: [0, 15], zones: [1, 3, 6, 10], lager_is_beter: true,
     bandLabels: ['< 1', '1–3', '3–6', '6–10', '> 10'],
-    score: v => v === null ? null : v < 1 ? 90 : v < 3 ? 75 : v < 6 ? 55 : v < 10 ? 30 : 15 },
+    score: v => v == null ? null : v < 1 ? 90 : v < 3 ? 75 : v < 6 ? 55 : v < 10 ? 30 : 15 },
   { key: 'eps', label: 'EPS', suffix: '', desc: 'Winst per aandeel (TTM)',
     range: [-10, 30], zones: [0, 2, 5, 10], lager_is_beter: false,
     bandLabels: ['Negatief', '0–2', '2–5', '5–10', '> 10'],
-    score: v => v === null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
+    score: v => v == null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
   { key: 'debt_to_equity', label: 'Debt / Equity', suffix: 'x', desc: 'Verhouding schuld tot eigen vermogen',
     range: [0, 6], zones: [0.5, 1, 2, 4], lager_is_beter: true,
     bandLabels: ['< 0.5', '0.5–1', '1–2', '2–4', '> 4'],
-    score: v => v === null ? null : v < 0.5 ? 90 : v < 1 ? 70 : v < 2 ? 45 : v < 4 ? 25 : 10 },
+    score: v => v == null ? null : v < 0.5 ? 90 : v < 1 ? 70 : v < 2 ? 45 : v < 4 ? 25 : 10 },
   { key: 'current_ratio', label: 'Current Ratio', suffix: 'x', desc: 'Vlottende activa / kortlopende schulden',
     range: [0, 4], zones: [0.8, 1, 1.5, 2], lager_is_beter: false,
     bandLabels: ['< 0.8', '0.8–1', '1–1.5', '1.5–2', '> 2'],
-    score: v => v === null ? null : v > 2 ? 90 : v > 1.5 ? 75 : v > 1 ? 55 : v > 0.8 ? 30 : 10 },
+    score: v => v == null ? null : v > 2 ? 90 : v > 1.5 ? 75 : v > 1 ? 55 : v > 0.8 ? 30 : 10 },
   { key: 'roe_percent', label: 'ROE', suffix: '%', desc: 'Rendement op eigen vermogen',
     range: [-20, 80], zones: [0, 10, 20, 40], lager_is_beter: false,
     bandLabels: ['Negatief', '0–10%', '10–20%', '20–40%', '> 40%'],
-    score: v => v === null ? null : v > 40 ? 90 : v > 20 ? 75 : v > 10 ? 55 : v > 0 ? 35 : 10 },
+    score: v => v == null ? null : v > 40 ? 90 : v > 20 ? 75 : v > 10 ? 55 : v > 0 ? 35 : 10 },
   { key: 'gross_margin_percent', label: 'Brutomarge', suffix: '%', desc: 'Brutowinstmarge (TTM)',
     range: [0, 90], zones: [10, 25, 40, 60], lager_is_beter: false,
     bandLabels: ['< 10%', '10–25%', '25–40%', '40–60%', '> 60%'],
-    score: v => v === null ? null : v > 60 ? 90 : v > 40 ? 75 : v > 25 ? 55 : v > 10 ? 35 : 10 },
+    score: v => v == null ? null : v > 60 ? 90 : v > 40 ? 75 : v > 25 ? 55 : v > 10 ? 35 : 10 },
   { key: 'profit_margin_percent', label: 'Nettomarge', suffix: '%', desc: 'Netto winstmarge (TTM)',
     range: [-20, 50], zones: [0, 8, 15, 25], lager_is_beter: false,
     bandLabels: ['Negatief', '0–8%', '8–15%', '15–25%', '> 25%'],
-    score: v => v === null ? null : v > 25 ? 90 : v > 15 ? 75 : v > 8 ? 55 : v > 0 ? 35 : 10 },
+    score: v => v == null ? null : v > 25 ? 90 : v > 15 ? 75 : v > 8 ? 55 : v > 0 ? 35 : 10 },
   { key: 'revenue_growth_percent', label: 'Omzetgroei', suffix: '%', desc: 'Jaar-op-jaar omzetgroei',
     range: [-10, 50], zones: [0, 5, 10, 20], lager_is_beter: false,
     bandLabels: ['Negatief', '0–5%', '5–10%', '10–20%', '> 20%'],
-    score: v => v === null ? null : v > 20 ? 90 : v > 10 ? 75 : v > 5 ? 55 : v > 0 ? 35 : 10 },
+    score: v => v == null ? null : v > 20 ? 90 : v > 10 ? 75 : v > 5 ? 55 : v > 0 ? 35 : 10 },
   { key: 'free_cash_flow_billions', label: 'Free Cash Flow', suffix: 'B', desc: 'Vrije kasstroom (TTM, miljarden USD)',
     range: [-10, 40], zones: [0, 1, 5, 20], lager_is_beter: false,
     bandLabels: ['Negatief', '0–1B', '1–5B', '5–20B', '> 20B'],
-    score: v => v === null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
+    score: v => v == null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
 ]
 
 const ZONE_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']
 
-const EINDOORDEEL_CONFIG = {
-  'STERK KOOPMOMENT':       { color: '#22c55e', bg: 'linear-gradient(135deg, #031a09 0%, #051408 100%)', border: '#14532d', icon: '🚀' },
-  'KOOPMOMENT':             { color: '#84cc16', bg: 'linear-gradient(135deg, #0a1f02 0%, #0c1a04 100%)', border: '#254208', icon: '✅' },
-  'NEUTRAAL':               { color: '#eab308', bg: 'linear-gradient(135deg, #1a1400 0%, #181200 100%)', border: '#3a2e00', icon: '⚖️' },
-  'WACHT OP BETERE INSTAP': { color: '#f97316', bg: 'linear-gradient(135deg, #1a0800 0%, #180a00 100%)', border: '#3a1800', icon: '⏳' },
-  'VERMIJD':                { color: '#ef4444', bg: 'linear-gradient(135deg, #1a0202 0%, #180303 100%)', border: '#3a0808', icon: '⛔' },
-}
-
-function detectEindoordeel(text) {
-  if (!text) return null
-  for (const l of ['STERK KOOPMOMENT', 'WACHT OP BETERE INSTAP', 'KOOPMOMENT', 'NEUTRAAL', 'VERMIJD']) {
-    if (text.includes(l)) return l
-  }
-  return null
-}
-
-function detectKoopscore(text) {
-  if (!text) return null
-  const match = text.match(/KOOPSCORE:\s*(\d+(?:\.\d+)?)\s*\/\s*10/i)
-  return match ? parseFloat(match[1]) : null
+const OORDEEL = {
+  'STERK KOOPMOMENT':       { color: '#22c55e', bg: 'linear-gradient(135deg,#021508,#031209)', border: '#14532d', icon: '🚀' },
+  'KOOPMOMENT':             { color: '#84cc16', bg: 'linear-gradient(135deg,#081800,#0a1c02)', border: '#1e3a05', icon: '✅' },
+  'NEUTRAAL':               { color: '#eab308', bg: 'linear-gradient(135deg,#161000,#141200)', border: '#302800', icon: '⚖️' },
+  'WACHT OP BETERE INSTAP': { color: '#f97316', bg: 'linear-gradient(135deg,#160600,#180800)', border: '#321400', icon: '⏳' },
+  'VERMIJD':                { color: '#ef4444', bg: 'linear-gradient(135deg,#160101,#180202)', border: '#300606', icon: '⛔' },
 }
 
 function scoreToLabel(s) {
-  if (s === null) return { label: 'N/B', color: '#555566' }
-  if (s >= 80) return { label: 'STERK', color: '#22c55e' }
-  if (s >= 60) return { label: 'GOED', color: '#84cc16' }
-  if (s >= 40) return { label: 'NEUTRAAL', color: '#eab308' }
-  if (s >= 20) return { label: 'ZWAK', color: '#f97316' }
-  return { label: 'SLECHT', color: '#ef4444' }
+  if (s == null) return { label: 'N/B', color: '#3a3f52' }
+  if (s >= 80) return { label: 'STERK',   color: '#22c55e' }
+  if (s >= 60) return { label: 'GOED',    color: '#84cc16' }
+  if (s >= 40) return { label: 'NEUTRAAL',color: '#eab308' }
+  if (s >= 20) return { label: 'ZWAK',    color: '#f97316' }
+  return             { label: 'SLECHT',   color: '#ef4444' }
 }
 
-function koopscoreColor(s) {
+function scoreColor(s) {
   if (s >= 8) return '#22c55e'
   if (s >= 6) return '#84cc16'
   if (s >= 4) return '#eab308'
@@ -92,346 +77,281 @@ function koopscoreColor(s) {
   return '#ef4444'
 }
 
-function valueToPosition(value, range) {
-  const [min, max] = range
-  return ((Math.max(min, Math.min(max, value)) - min) / (max - min)) * 100
+function vtp(val, range) {
+  return ((Math.max(range[0], Math.min(range[1], val)) - range[0]) / (range[1] - range[0])) * 100
 }
-function zoneToPercent(zoneVal, range) {
-  const [min, max] = range
-  return ((zoneVal - min) / (max - min)) * 100
+function ztp(z, range) {
+  return ((z - range[0]) / (range[1] - range[0])) * 100
 }
 
-const css = `
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeUp { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:translateY(0) } }
-  @keyframes markerIn { from { opacity:0; transform:translateX(-50%) scaleY(0) } to { opacity:1; transform:translateX(-50%) scaleY(1) } }
-  @keyframes scoreIn { from { opacity:0; transform:scale(0.8) } to { opacity:1; transform:scale(1) } }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { background:#080b0f; color:#d4d8e0; font-family:'Inter',sans-serif; }
+const S = document.createElement('style')
+S.textContent = `
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes mkr{from{opacity:0;transform:translateX(-50%) scaleY(0)}to{opacity:1;transform:translateX(-50%) scaleY(1)}}
+@keyframes ring{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080b0f;color:#d4d8e0;font-family:'Inter',sans-serif}
 
-  /* Layout */
-  .result-page { max-width:960px; margin:0 auto; padding:2rem 1.5rem 5rem; animation:fadeUp 0.4s ease; }
-  .result-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2rem; padding-bottom:1.5rem; border-bottom:1px solid #1a1f2e; }
-  .ticker-eyebrow { font-size:11px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:#f97316; margin-bottom:6px; }
-  .ticker-name { font-family:'JetBrains Mono',monospace; font-size:clamp(2.4rem,6vw,3.8rem); font-weight:700; color:#fff; letter-spacing:-0.02em; line-height:1; }
-  .back-btn { background:transparent; border:1px solid #1a1f2e; color:#555566; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-family:'Inter',sans-serif; transition:all 0.15s; white-space:nowrap; }
-  .back-btn:hover { border-color:#f97316; color:#f97316; }
-  .data-warning { background:#1a0f00; border:1px solid #f97316; border-radius:8px; padding:12px 16px; margin-bottom:24px; color:#f97316; font-size:13px; }
-  .section-title { font-size:10px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:#555566; margin-bottom:12px; }
+/* Page */
+.page{max-width:960px;margin:0 auto;padding:2rem 1.5rem 5rem;animation:up .4s ease}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid #151c2a}
+.eyebrow{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#f97316;margin-bottom:6px}
+.ticker{font-family:'JetBrains Mono',monospace;font-size:clamp(2.2rem,6vw,3.6rem);font-weight:700;color:#fff;letter-spacing:-.02em;line-height:1}
+.back{background:transparent;border:1px solid #1a1f2e;color:#444;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap}
+.back:hover{border-color:#f97316;color:#f97316}
+.stitle{font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#333d52;margin-bottom:12px}
 
-  /* Markt */
-  .market-section { margin-bottom:2rem; }
-  .market-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#1a1f2e; border:1px solid #1a1f2e; border-radius:10px; overflow:hidden; }
-  .market-cell { background:#0d1117; padding:14px 16px; }
-  .market-label { font-size:10px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#555566; margin-bottom:6px; }
-  .market-value { font-family:'JetBrains Mono',monospace; font-size:1.2rem; font-weight:700; color:#e8eaf0; }
-  .market-sub { font-size:11px; color:#555566; margin-top:3px; }
-  .week52-wrap { background:#0d1117; border:1px solid #1a1f2e; border-radius:10px; padding:16px 20px; margin-top:1px; }
-  .week52-bar { position:relative; margin:8px 0 6px; }
-  .week52-track { height:6px; background:linear-gradient(to right,#ef4444,#eab308,#22c55e); border-radius:3px; }
-  .week52-marker { position:absolute; top:-3px; transform:translateX(-50%); width:3px; height:12px; background:#fff; border-radius:2px; box-shadow:0 0 6px rgba(255,255,255,0.5); }
+/* Markt */
+.mkt{margin-bottom:2rem}
+.mktgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#151c2a;border:1px solid #151c2a;border-radius:10px;overflow:hidden}
+.mktcell{background:#0a0e16;padding:14px 16px}
+.mktlbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#333d52;margin-bottom:5px}
+.mktval{font-family:'JetBrains Mono',monospace;font-size:1.15rem;font-weight:700;color:#e8eaf0}
+.mktsub{font-size:11px;color:#333d52;margin-top:3px}
+.w52{background:#0a0e16;border:1px solid #151c2a;border-radius:10px;padding:16px 20px;margin-top:1px}
+.w52bar{position:relative;margin:8px 0 4px}
+.w52track{height:5px;background:linear-gradient(to right,#ef4444,#eab308,#22c55e);border-radius:3px}
+.w52pin{position:absolute;top:-4px;transform:translateX(-50%);width:2px;height:13px;background:#fff;border-radius:2px;box-shadow:0 0 8px rgba(255,255,255,.5)}
 
-  /* Metrics */
-  .metrics-section { margin-bottom:2rem; }
-  .metrics-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:#1a1f2e; border:1px solid #1a1f2e; border-radius:10px; overflow:hidden; }
-  .metric-cell { background:#0d1117; padding:18px 20px 22px; }
-  .metric-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
-  .metric-label { font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:#555566; }
-  .metric-badge { font-size:9px; font-weight:700; letter-spacing:0.1em; padding:2px 7px; border-radius:3px; text-transform:uppercase; }
-  .metric-value { font-family:'JetBrains Mono',monospace; font-size:1.7rem; font-weight:700; line-height:1; margin-bottom:4px; word-break:break-word; }
-  .metric-desc { font-size:11px; color:#444455; margin-bottom:16px; }
-  .band-container { position:relative; margin-bottom:6px; }
-  .band-track { display:flex; height:8px; border-radius:4px; overflow:hidden; gap:1px; }
-  .band-zone { flex:1; border-radius:2px; opacity:0.35; }
-  .band-zone.active { opacity:1; }
-  .band-marker-wrap { position:absolute; top:-3px; transform:translateX(-50%); animation:markerIn 0.4s ease 0.3s both; pointer-events:none; }
-  .band-marker { width:3px; height:14px; border-radius:2px; background:#fff; box-shadow:0 0 6px rgba(255,255,255,0.6); }
-  .band-labels { display:flex; justify-content:space-between; margin-top:5px; }
-  .band-label { font-size:9px; color:#333344; font-family:'JetBrains Mono',monospace; }
-  .band-label.active { color:#888899; }
+/* Metrics */
+.msec{margin-bottom:2rem}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#151c2a;border:1px solid #151c2a;border-radius:10px;overflow:hidden}
+.mcell{background:#0a0e16;padding:18px 20px 22px}
+.mtop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px}
+.mlbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#333d52}
+.mbadge{font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 7px;border-radius:3px;text-transform:uppercase}
+.mval{font-family:'JetBrains Mono',monospace;font-size:1.65rem;font-weight:700;line-height:1;margin-bottom:4px;word-break:break-word}
+.mdesc{font-size:11px;color:#2a3044;margin-bottom:15px}
+.bcon{position:relative;margin-bottom:5px}
+.btrack{display:flex;height:7px;border-radius:4px;overflow:hidden;gap:1px}
+.bzone{flex:1;border-radius:2px;opacity:.3}
+.bzone.on{opacity:1}
+.bpin{position:absolute;top:-3px;transform:translateX(-50%);animation:mkr .4s ease .2s both;pointer-events:none}
+.bpinbar{width:2px;height:13px;border-radius:2px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.55)}
+.blbls{display:flex;justify-content:space-between;margin-top:4px}
+.blbl{font-size:9px;color:#252d40;font-family:'JetBrains Mono',monospace}
+.blbl.on{color:#666f88}
 
-  /* Analyse sectie */
-  .analyse-section { border-radius:12px; overflow:hidden; border:1px solid #1a1f2e; margin-bottom:0; }
-  .analyse-header { padding:14px 24px; background:#0d1117; border-bottom:1px solid #1a1f2e; display:flex; align-items:center; gap:10px; }
-  .analyse-dot { width:7px; height:7px; background:#f97316; border-radius:50%; }
-  .analyse-title { font-size:10px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:#f97316; }
+/* AI sectie */
+.ai{border-radius:12px;overflow:hidden;border:1px solid #151c2a}
+.aihdr{padding:13px 24px;background:#0a0e16;border-bottom:1px solid #151c2a;display:flex;align-items:center;gap:9px}
+.aidot{width:6px;height:6px;background:#f97316;border-radius:50%}
+.aititle{font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#f97316}
 
-  /* Eindoordeel banner */
-  .eindoordeel-banner { padding:28px; display:flex; align-items:center; gap:24px; border-bottom:1px solid transparent; }
-  .eindoordeel-icon { font-size:2.4rem; line-height:1; flex-shrink:0; }
-  .eindoordeel-right { flex:1; }
-  .eindoordeel-sublabel { font-size:9px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; opacity:0.55; margin-bottom:5px; }
-  .eindoordeel-verdict { font-family:'JetBrains Mono',monospace; font-size:clamp(1.5rem,4vw,2.2rem); font-weight:700; letter-spacing:-0.02em; line-height:1; }
+/* Eindoordeel banner */
+.eobanner{padding:26px 28px;display:flex;align-items:center;gap:22px}
+.eoicon{font-size:2.2rem;line-height:1;flex-shrink:0}
+.eoright{flex:1}
+.eosub{font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin-bottom:5px}
+.eoverdict{font-family:'JetBrains Mono',monospace;font-size:clamp(1.4rem,4vw,2rem);font-weight:700;letter-spacing:-.02em;line-height:1}
 
-  /* Koopscore ring */
-  .koopscore-wrap { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:4px; }
-  .koopscore-ring { position:relative; width:72px; height:72px; animation:scoreIn 0.5s ease 0.2s both; }
-  .koopscore-ring svg { transform:rotate(-90deg); }
-  .koopscore-number { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:1.3rem; font-weight:700; }
-  .koopscore-label { font-size:9px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:#555566; }
+/* Score ring */
+.ring-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;animation:ring .5s ease .15s both}
+.ring{position:relative;width:70px;height:70px}
+.ring svg{transform:rotate(-90deg)}
+.ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700}
+.ring-lbl{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#333d52}
 
-  /* Analyse body */
-  .analyse-body { background:#0d1117; }
+/* Samenvatting */
+.sam{padding:22px 28px;border-top:1px solid #101520;border-bottom:1px solid #101520;background:#0a0e16}
+.sam p{color:#7a8399;font-size:14px;line-height:1.85}
 
-  /* Samenvatting blok */
-  .samenvatting-blok { padding:24px 28px; border-bottom:1px solid #131820; }
-  .samenvatting-blok p { color:#8892a4; font-size:14px; line-height:1.85; }
+/* Punten */
+.punten{display:grid;grid-template-columns:1fr 1fr;background:#101520}
+.pblok{background:#0a0e16;padding:20px 22px}
+.pblok:first-child{border-right:1px solid #101520}
+.phdr{display:flex;align-items:center;gap:7px;margin-bottom:12px}
+.phdr-icon{font-size:.95rem}
+.phdr-title{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+.plist{list-style:none;display:flex;flex-direction:column;gap:7px}
+.pitem{display:flex;gap:9px;align-items:flex-start}
+.pbullet{width:15px;height:15px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;margin-top:2px}
+.ptext{color:#7a8399;font-size:13px;line-height:1.6}
+.ptext strong{color:#c4ccd8;font-weight:600}
 
-  /* Punten grid */
-  .punten-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:#131820; border-bottom:1px solid #131820; }
-  .punten-blok { background:#0d1117; padding:22px 24px; }
-  .punten-header { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
-  .punten-icon { font-size:1rem; }
-  .punten-title { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; }
-  .punten-list { list-style:none; display:flex; flex-direction:column; gap:8px; }
-  .punten-item { display:flex; gap:10px; align-items:flex-start; }
-  .punten-bullet { width:16px; height:16px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; margin-top:2px; }
-  .punten-text { color:#8892a4; font-size:13px; line-height:1.6; }
-  .punten-text strong { color:#c8d0e0; }
+/* Vooruitzichten */
+.vblok{padding:20px 28px;border-top:1px solid #101520;background:#0a0e16}
+.vhdr{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.vhdr-icon{font-size:.95rem}
+.vhdr-title{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#818cf8}
+.vtext{color:#7a8399;font-size:14px;line-height:1.85}
 
-  /* Vooruitzichten blok */
-  .vooruitzichten-blok { padding:22px 28px; border-bottom:1px solid #131820; }
-  .vooruitzichten-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
-  .vooruitzichten-icon { font-size:1rem; }
-  .vooruitzichten-title { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#818cf8; }
-  .vooruitzichten-body p { color:#8892a4; font-size:14px; line-height:1.85; margin-bottom:0.6em; }
-  .vooruitzichten-body p:last-child { margin-bottom:0; }
-  .vooruitzichten-body strong { color:#c8d0e0; }
+/* Koopadvies */
+.kblok{padding:20px 28px 26px;border-top:1px solid #101520;background:#0a0e16}
+.khdr{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.khdr-icon{font-size:.95rem}
+.khdr-title{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#f97316}
+.ktext{color:#8a93a8;font-size:14px;line-height:1.85}
+.ktext strong{color:#e0e4ee;font-weight:600}
 
-  /* Conclusie blok */
-  .conclusie-blok { padding:22px 28px 28px; }
-  .conclusie-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
-  .conclusie-icon { font-size:1rem; }
-  .conclusie-title { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#f97316; }
-  .conclusie-body p { color:#9aa3b4; font-size:14px; line-height:1.85; margin-bottom:0.6em; }
-  .conclusie-body p:last-child { margin-bottom:0; }
-  .conclusie-body strong { color:#e0e4ee; }
+/* Zoekpagina */
+.sp{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:radial-gradient(ellipse 80% 60% at 50% -10%,#1c0d00,#080b0f 55%)}
+.si{max-width:540px;width:100%;text-align:center}
+.sew{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#f97316;border:1px solid #3a1a00;background:#110900;padding:4px 12px;border-radius:20px;margin-bottom:24px}
+.stit{font-family:'JetBrains Mono',monospace;font-size:clamp(2rem,6vw,3rem);font-weight:700;color:#fff;letter-spacing:-.03em;line-height:1.1;margin-bottom:14px}
+.stit span{color:#f97316}
+.ssub{font-size:15px;color:#444d62;line-height:1.6;margin-bottom:36px}
+.srow{display:flex;gap:8px;background:#0a0e16;border:1px solid #151c2a;border-radius:10px;padding:7px;margin-bottom:12px;transition:border-color .2s}
+.srow:focus-within{border-color:#f97316}
+.sinp{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:600;letter-spacing:.04em;padding:8px 12px}
+.sinp::placeholder{color:#252d3e}
+.sbtn{background:#f97316;color:#fff;border:none;border-radius:7px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.sbtn:hover{background:#e86c0a}
+.sbtn:disabled{opacity:.5;cursor:default}
+.serr{color:#ef4444;font-size:13px;margin-top:8px}
+.sload{margin-top:32px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.sloadtxt{color:#444d62;font-size:13px;font-family:'JetBrains Mono',monospace}
+.tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:40px}
+.tag{font-size:11px;color:#252d40;background:#0a0e16;border:1px solid #151c2a;padding:4px 10px;border-radius:4px;font-family:'JetBrains Mono',monospace}
+.spinner{width:24px;height:24px;border:2px solid #151c2a;border-top-color:#f97316;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.spinnersm{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.warn{background:#1a0f00;border:1px solid #f97316;border-radius:8px;padding:12px 16px;margin-bottom:24px;color:#f97316;font-size:13px}
 
-  /* Zoekpagina */
-  .search-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; background:radial-gradient(ellipse 80% 60% at 50% -10%,#1a0d00 0%,#080b0f 55%); }
-  .search-inner { max-width:540px; width:100%; text-align:center; }
-  .search-eyebrow { display:inline-block; font-size:10px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; color:#f97316; border:1px solid #3a1a00; background:#110900; padding:4px 12px; border-radius:20px; margin-bottom:24px; }
-  .search-title { font-family:'JetBrains Mono',monospace; font-size:clamp(2rem,6vw,3rem); font-weight:700; color:#fff; letter-spacing:-0.03em; line-height:1.1; margin-bottom:14px; }
-  .search-title span { color:#f97316; }
-  .search-sub { font-size:15px; color:#555566; line-height:1.6; margin-bottom:36px; }
-  .search-row { display:flex; gap:8px; background:#0d1117; border:1px solid #1a1f2e; border-radius:10px; padding:7px; margin-bottom:12px; transition:border-color 0.2s; }
-  .search-row:focus-within { border-color:#f97316; }
-  .search-input { flex:1; background:transparent; border:none; outline:none; color:#fff; font-family:'JetBrains Mono',monospace; font-size:1.3rem; font-weight:600; letter-spacing:0.04em; padding:8px 12px; }
-  .search-input::placeholder { color:#2a2f3e; }
-  .search-btn { background:#f97316; color:#fff; border:none; border-radius:7px; padding:10px 24px; font-size:14px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:background 0.15s; white-space:nowrap; display:flex; align-items:center; gap:8px; }
-  .search-btn:hover { background:#ea6c0a; }
-  .search-btn:disabled { opacity:0.5; cursor:default; }
-  .search-error { color:#ef4444; font-size:13px; margin-top:8px; }
-  .loading-state { margin-top:32px; display:flex; flex-direction:column; align-items:center; gap:12px; }
-  .loading-text { color:#555566; font-size:13px; font-family:'JetBrains Mono',monospace; }
-  .tag-row { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:40px; }
-  .tag { font-size:11px; color:#333344; background:#0d1117; border:1px solid #1a1f2e; padding:4px 10px; border-radius:4px; font-family:'JetBrains Mono',monospace; }
-  .spinner { width:24px; height:24px; border:2px solid #1a1f2e; border-top-color:#f97316; border-radius:50%; animation:spin 0.7s linear infinite; display:inline-block; }
-  .spinner-sm { width:16px; height:16px; border:2px solid rgba(255,255,255,0.2); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; display:inline-block; }
-
-  @media (max-width:640px) {
-    .metrics-grid { grid-template-columns:1fr; }
-    .market-grid { grid-template-columns:1fr 1fr; }
-    .punten-grid { grid-template-columns:1fr; }
-    .eindoordeel-banner { flex-wrap:wrap; }
-  }
+@media(max-width:640px){.mgrid{grid-template-columns:1fr}.mktgrid{grid-template-columns:1fr 1fr}.punten{grid-template-columns:1fr}.eobanner{flex-wrap:wrap}}
 `
-const styleEl = document.createElement('style')
-styleEl.textContent = css
-document.head.appendChild(styleEl)
+document.head.appendChild(S)
 
-function BandBar({ metric, value }) {
-  const colors = metric.lager_is_beter ? [...ZONE_COLORS].reverse() : ZONE_COLORS
-  if (value === null || value === undefined) {
-    return (
-      <div className="band-container">
-        <div className="band-track">{ZONE_COLORS.map((c,i) => <div key={i} className="band-zone" style={{background:c}} />)}</div>
-        <div className="band-labels">{metric.bandLabels.map((l,i) => <span key={i} className="band-label">{l}</span>)}</div>
-      </div>
-    )
-  }
-  const pos = valueToPosition(value, metric.range)
-  const zb = metric.zones.map(z => zoneToPercent(z, metric.range))
-  const zoneWidths = [zb[0], zb[1]-zb[0], zb[2]-zb[1], zb[3]-zb[2], 100-zb[3]]
-  const activeZone = metric.lager_is_beter
-    ? (value < metric.zones[0] ? 4 : value < metric.zones[1] ? 3 : value < metric.zones[2] ? 2 : value < metric.zones[3] ? 1 : 0)
-    : (value > metric.zones[3] ? 4 : value > metric.zones[2] ? 3 : value > metric.zones[1] ? 2 : value > metric.zones[0] ? 1 : 0)
+function BandBar({ m, val }) {
+  const colors = m.lager_is_beter ? [...ZONE_COLORS].reverse() : ZONE_COLORS
+  if (val == null) return (
+    <div className="bcon">
+      <div className="btrack">{ZONE_COLORS.map((c,i) => <div key={i} className="bzone" style={{background:c}} />)}</div>
+      <div className="blbls">{m.bandLabels.map((l,i) => <span key={i} className="blbl">{l}</span>)}</div>
+    </div>
+  )
+  const pos = vtp(val, m.range)
+  const zb = m.zones.map(z => ztp(z, m.range))
+  const ws = [zb[0], zb[1]-zb[0], zb[2]-zb[1], zb[3]-zb[2], 100-zb[3]]
+  const az = m.lager_is_beter
+    ? (val < m.zones[0] ? 4 : val < m.zones[1] ? 3 : val < m.zones[2] ? 2 : val < m.zones[3] ? 1 : 0)
+    : (val > m.zones[3] ? 4 : val > m.zones[2] ? 3 : val > m.zones[1] ? 2 : val > m.zones[0] ? 1 : 0)
   return (
-    <div className="band-container">
-      <div className="band-track">
-        {zoneWidths.map((w,i) => (
-          <div key={i} className={`band-zone${i===activeZone?' active':''}`} style={{flex:`0 0 ${w}%`, background:colors[i]}} />
-        ))}
+    <div className="bcon">
+      <div className="btrack">
+        {ws.map((w,i) => <div key={i} className={`bzone${i===az?' on':''}`} style={{flex:`0 0 ${w}%`,background:colors[i]}} />)}
       </div>
-      <div className="band-marker-wrap" style={{left:`${pos}%`}}>
-        <div className="band-marker" style={{background:colors[activeZone]}} />
+      <div className="bpin" style={{left:`${pos}%`}}>
+        <div className="bpinbar" style={{background:colors[az]}} />
       </div>
-      <div className="band-labels">
-        {metric.bandLabels.map((l,i) => <span key={i} className={`band-label${i===activeZone?' active':''}`}>{l}</span>)}
+      <div className="blbls">
+        {m.bandLabels.map((l,i) => <span key={i} className={`blbl${i===az?' on':''}`}>{l}</span>)}
       </div>
     </div>
   )
 }
 
-function KoopscoreRing({ score }) {
-  const color = koopscoreColor(score)
-  const r = 28, circ = 2 * Math.PI * r
-  const fill = (score / 10) * circ
+function ScoreRing({ score }) {
+  const color = scoreColor(score)
+  const r = 27, circ = 2 * Math.PI * r, fill = (score / 10) * circ
   return (
-    <div className="koopscore-wrap">
-      <div className="koopscore-ring">
-        <svg width="72" height="72" viewBox="0 0 72 72">
-          <circle cx="36" cy="36" r={r} fill="none" stroke="#1a1f2e" strokeWidth="5" />
-          <circle cx="36" cy="36" r={r} fill="none" stroke={color} strokeWidth="5"
+    <div className="ring-wrap">
+      <div className="ring">
+        <svg width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r={r} fill="none" stroke="#151c2a" strokeWidth="5" />
+          <circle cx="35" cy="35" r={r} fill="none" stroke={color} strokeWidth="5"
             strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" />
         </svg>
-        <div className="koopscore-number" style={{color}}>{score}</div>
+        <div className="ring-num" style={{color}}>{score}</div>
       </div>
-      <div className="koopscore-label">/ 10</div>
+      <div className="ring-lbl">koopscore</div>
     </div>
   )
 }
 
-// Parst de markdown van Claude in secties
-function parseAnalyse(text) {
-  if (!text) return {}
-  const get = (label) => {
-    const re = new RegExp(`##\\s*${label}[^\\n]*\\n([\\s\\S]*?)(?=\\n##\\s|$)`, 'i')
-    const m = text.match(re)
-    return m ? m[1].trim() : null
-  }
-  const parseBullets = (raw) => {
-    if (!raw) return []
-    return raw.split('\n')
-      .map(l => l.replace(/^[-*•]\s*/, '').trim())
-      .filter(l => l.length > 2)
-  }
-  return {
-    samenvatting: get('Samenvatting'),
-    sterkePunten: parseBullets(get('Sterke punten')),
-    aandachtspunten: parseBullets(get('Aandachtspunten')),
-    vooruitzichten: get('Vooruitzichten'),
-    conclusie: get('Eindoordeel'),
-  }
-}
+function AIBlok({ ticker, analyse }) {
+  if (!analyse || typeof analyse !== 'object') return null
 
-function AnalyseSectie({ ticker, analyse }) {
-  const eindoordeel = detectEindoordeel(analyse)
-  const koopscore = detectKoopscore(analyse)
-  const eoConfig = eindoordeel ? EINDOORDEEL_CONFIG[eindoordeel] : null
-  const parsed = parseAnalyse(analyse)
-
-  // Verwijder de KOOPSCORE: X/10 regel uit conclusie tekst
-  const conclusieTekst = parsed.conclusie
-    ? parsed.conclusie.replace(/\*\*(STERK KOOPMOMENT|KOOPMOMENT|NEUTRAAL|WACHT OP BETERE INSTAP|VERMIJD)\*\*/g, '').replace(/KOOPSCORE:\s*\d+(?:\.\d+)?\s*\/\s*10/gi, '').trim()
-    : null
+  const eo = analyse.eindoordeel?.trim().toUpperCase()
+  const cfg = eo ? (OORDEEL[eo] || null) : null
+  const score = analyse.koopscore != null ? Number(analyse.koopscore) : null
 
   return (
-    <div className="analyse-section">
-      <div className="analyse-header">
-        <span className="analyse-dot" />
-        <span className="analyse-title">AI Beoordeling — {ticker}</span>
+    <div className="ai">
+      <div className="aihdr">
+        <span className="aidot" />
+        <span className="aititle">AI Beoordeling — {ticker}</span>
       </div>
 
-      {/* Eindoordeel + koopscore */}
-      {eoConfig && (
-        <div className="eindoordeel-banner" style={{background: eoConfig.bg, borderBottomColor: eoConfig.border}}>
-          <span className="eindoordeel-icon">{eoConfig.icon}</span>
-          <div className="eindoordeel-right">
-            <div className="eindoordeel-sublabel" style={{color: eoConfig.color}}>Eindoordeel</div>
-            <div className="eindoordeel-verdict" style={{color: eoConfig.color}}>{eindoordeel}</div>
+      {/* Eindoordeel + score */}
+      {cfg && (
+        <div className="eobanner" style={{background: cfg.bg, borderBottom: `1px solid ${cfg.border}`}}>
+          <span className="eoicon">{cfg.icon}</span>
+          <div className="eoright">
+            <div className="eosub" style={{color: cfg.color}}>Eindoordeel</div>
+            <div className="eoverdict" style={{color: cfg.color}}>{eo}</div>
           </div>
-          {koopscore !== null && <KoopscoreRing score={koopscore} />}
+          {score != null && <ScoreRing score={score} />}
         </div>
       )}
 
-      <div className="analyse-body">
-        {/* Samenvatting */}
-        {parsed.samenvatting && (
-          <div className="samenvatting-blok">
-            <ReactMarkdown>{parsed.samenvatting}</ReactMarkdown>
-          </div>
-        )}
+      {/* Samenvatting */}
+      {analyse.samenvatting && (
+        <div className="sam">
+          <p>{analyse.samenvatting}</p>
+        </div>
+      )}
 
-        {/* Sterke punten + Aandachtspunten */}
-        {(parsed.sterkePunten?.length > 0 || parsed.aandachtspunten?.length > 0) && (
-          <div className="punten-grid">
-            {parsed.sterkePunten?.length > 0 && (
-              <div className="punten-blok">
-                <div className="punten-header">
-                  <span className="punten-icon">✅</span>
-                  <span className="punten-title" style={{color:'#22c55e'}}>Sterke punten</span>
-                </div>
-                <ul className="punten-list">
-                  {parsed.sterkePunten.map((p, i) => (
-                    <li key={i} className="punten-item">
-                      <span className="punten-bullet" style={{background:'#22c55e22', color:'#22c55e'}}>+</span>
-                      <span className="punten-text"><ReactMarkdown>{p}</ReactMarkdown></span>
-                    </li>
-                  ))}
-                </ul>
+      {/* Sterke + zwakke punten */}
+      {((analyse.sterke_punten?.length > 0) || (analyse.aandachtspunten?.length > 0)) && (
+        <div className="punten">
+          {analyse.sterke_punten?.length > 0 && (
+            <div className="pblok">
+              <div className="phdr">
+                <span className="phdr-icon">✅</span>
+                <span className="phdr-title" style={{color:'#22c55e'}}>Sterke punten</span>
               </div>
-            )}
-            {parsed.aandachtspunten?.length > 0 && (
-              <div className="punten-blok" style={{borderLeft:'1px solid #131820'}}>
-                <div className="punten-header">
-                  <span className="punten-icon">⚠️</span>
-                  <span className="punten-title" style={{color:'#f97316'}}>Aandachtspunten</span>
-                </div>
-                <ul className="punten-list">
-                  {parsed.aandachtspunten.map((p, i) => (
-                    <li key={i} className="punten-item">
-                      <span className="punten-bullet" style={{background:'#f9731622', color:'#f97316'}}>!</span>
-                      <span className="punten-text"><ReactMarkdown>{p}</ReactMarkdown></span>
-                    </li>
-                  ))}
-                </ul>
+              <ul className="plist">
+                {analyse.sterke_punten.map((p, i) => (
+                  <li key={i} className="pitem">
+                    <span className="pbullet" style={{background:'#22c55e20',color:'#22c55e'}}>+</span>
+                    <span className="ptext">{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {analyse.aandachtspunten?.length > 0 && (
+            <div className="pblok">
+              <div className="phdr">
+                <span className="phdr-icon">⚠️</span>
+                <span className="phdr-title" style={{color:'#f97316'}}>Aandachtspunten</span>
               </div>
-            )}
-          </div>
-        )}
+              <ul className="plist">
+                {analyse.aandachtspunten.map((p, i) => (
+                  <li key={i} className="pitem">
+                    <span className="pbullet" style={{background:'#f9731620',color:'#f97316'}}>!</span>
+                    <span className="ptext">{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Vooruitzichten */}
-        {parsed.vooruitzichten && (
-          <div className="vooruitzichten-blok">
-            <div className="vooruitzichten-header">
-              <span className="vooruitzichten-icon">🔭</span>
-              <span className="vooruitzichten-title">Vooruitzichten</span>
-            </div>
-            <div className="vooruitzichten-body">
-              <ReactMarkdown>{parsed.vooruitzichten}</ReactMarkdown>
-            </div>
+      {/* Vooruitzichten */}
+      {analyse.vooruitzichten && (
+        <div className="vblok">
+          <div className="vhdr">
+            <span className="vhdr-icon">🔭</span>
+            <span className="vhdr-title">Vooruitzichten</span>
           </div>
-        )}
+          <p className="vtext">{analyse.vooruitzichten}</p>
+        </div>
+      )}
 
-        {/* Conclusie / koopadvies */}
-        {conclusieTekst && (
-          <div className="conclusie-blok">
-            <div className="conclusie-header">
-              <span className="conclusie-icon">💡</span>
-              <span className="conclusie-title">Koopadvies</span>
-            </div>
-            <div className="conclusie-body">
-              <ReactMarkdown>{conclusieTekst}</ReactMarkdown>
-            </div>
+      {/* Koopadvies */}
+      {analyse.koopadvies && (
+        <div className="kblok">
+          <div className="khdr">
+            <span className="khdr-icon">💡</span>
+            <span className="khdr-title">Koopadvies</span>
           </div>
-        )}
-
-        {/* Fallback: als parsing mislukt toon gestylde ruwe analyse */}
-        {!parsed.samenvatting && !parsed.sterkePunten?.length && !parsed.vooruitzichten && !conclusieTekst && (
-          <div style={{padding:'28px', color:'#8892a4', fontSize:'14px', lineHeight:'1.85'}}>
-            <ReactMarkdown components={{
-              h2: ({children}) => <div style={{fontSize:'10px',fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#555566',marginTop:'1.8em',marginBottom:'0.8em',paddingBottom:'8px',borderBottom:'1px solid #131820'}}>{children}</div>,
-              h3: ({children}) => <div style={{fontSize:'13px',fontWeight:600,color:'#c8d0e0',marginTop:'1.2em',marginBottom:'0.4em'}}>{children}</div>,
-              strong: ({children}) => <strong style={{color:'#c8d0e0',fontWeight:600}}>{children}</strong>,
-              p: ({children}) => <p style={{color:'#8892a4',marginBottom:'0.8em'}}>{children}</p>,
-              ul: ({children}) => <ul style={{listStyle:'none',padding:0,margin:'0 0 0.8em'}}>{children}</ul>,
-              li: ({children}) => <li style={{display:'flex',gap:'10px',marginBottom:'6px',color:'#8892a4'}}><span style={{color:'#333344',flexShrink:0}}>—</span><span>{children}</span></li>,
-            }}>{analyse}</ReactMarkdown>
-          </div>
-        )}
-      </div>
+          <p className="ktext">{analyse.koopadvies}</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -442,16 +362,16 @@ export default function App() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
 
-  async function analyseer() {
+  async function go() {
     if (!ticker.trim()) return
     setLoading(true); setError(null); setResult(null)
     try {
       const res = await fetch(WEBHOOK, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ ticker: ticker.trim().toUpperCase() }),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) throw new Error()
       setResult(await res.json())
     } catch { setError('Ophalen mislukt. Controleer de ticker en probeer opnieuw.') }
     finally { setLoading(false) }
@@ -460,24 +380,24 @@ export default function App() {
   if (result) return <ResultPage result={result} onReset={() => { setResult(null); setTicker('') }} />
 
   return (
-    <div className="search-page">
-      <div className="search-inner">
-        <span className="search-eyebrow">AI Fundamentele Analyse</span>
-        <h1 className="search-title">Aandelen<span>Analyse</span></h1>
-        <p className="search-sub">Voer een ticker in voor een directe fundamentele analyse op basis van 15 financiële metrics en recent nieuws.</p>
-        <div className="search-row">
-          <input className="search-input" type="text" placeholder="AAPL, MSFT, META..."
+    <div className="sp">
+      <div className="si">
+        <span className="sew">AI Fundamentele Analyse</span>
+        <h1 className="stit">Aandelen<span>Analyse</span></h1>
+        <p className="ssub">Directe fundamentele analyse op basis van 15 metrics en recent nieuws.</p>
+        <div className="srow">
+          <input className="sinp" type="text" placeholder="AAPL, MSFT, META..."
             value={ticker} onChange={e => setTicker(e.target.value.toUpperCase())}
-            onKeyDown={e => e.key === 'Enter' && analyseer()} disabled={loading} autoFocus />
-          <button className="search-btn" onClick={analyseer} disabled={loading || !ticker.trim()}>
-            {loading ? <span className="spinner-sm" /> : null}
+            onKeyDown={e => e.key === 'Enter' && go()} disabled={loading} autoFocus />
+          <button className="sbtn" onClick={go} disabled={loading || !ticker.trim()}>
+            {loading ? <span className="spinnersm" /> : null}
             {loading ? 'Laden...' : 'Analyseer →'}
           </button>
         </div>
-        {error && <p className="search-error">{error}</p>}
-        {loading && <div className="loading-state"><span className="spinner" /><span className="loading-text">Data ophalen · Nieuws laden · Analyse via Claude...</span></div>}
-        <div className="tag-row">
-          {['P/E', 'PEG', 'P/B', 'EPS', 'D/E', 'ROE', 'Brutomarge', 'Nettomarge', 'Omzetgroei', 'FCF', '52W Range', 'Dividend', 'Nieuws'].map(t => (
+        {error && <p className="serr">{error}</p>}
+        {loading && <div className="sload"><span className="spinner" /><span className="sloadtxt">Data ophalen · Nieuws laden · Analyse via Claude...</span></div>}
+        <div className="tags">
+          {['P/E','PEG','P/B','EPS','D/E','ROE','Brutomarge','Nettomarge','Omzetgroei','FCF','52W Range','Dividend','Nieuws'].map(t => (
             <span key={t} className="tag">{t}</span>
           ))}
         </div>
@@ -488,94 +408,87 @@ export default function App() {
 
 function ResultPage({ result, onReset }) {
   const { ticker, analyse, raw_data: d } = result
-  const values = [d?.pe_ratio, d?.eps, d?.debt_to_equity, d?.roe_percent, d?.profit_margin_percent, d?.revenue_growth_percent, d?.free_cash_flow_billions, d?.peg_ratio, d?.gross_margin_percent, d?.current_ratio]
-  const isDataPoor = values.filter(v => v === null || v === undefined).length >= 5
-  const ytdColor = d?.ytd_return_percent > 0 ? '#22c55e' : d?.ytd_return_percent < 0 ? '#ef4444' : '#555566'
+  const poor = [d?.pe_ratio,d?.eps,d?.debt_to_equity,d?.roe_percent,d?.profit_margin_percent,d?.revenue_growth_percent,d?.free_cash_flow_billions,d?.peg_ratio,d?.gross_margin_percent,d?.current_ratio].filter(v => v == null).length >= 5
+  const ytdClr = d?.ytd_return_percent > 0 ? '#22c55e' : d?.ytd_return_percent < 0 ? '#ef4444' : '#444d62'
 
   return (
-    <div className="result-page">
-      {isDataPoor && <div className="data-warning">⚠️ Beperkte data — mogelijk verlieslatend of recent beursgenoteerd.</div>}
+    <div className="page">
+      {poor && <div className="warn">⚠️ Beperkte data — mogelijk verlieslatend of recent beursgenoteerd.</div>}
 
-      <header className="result-header">
+      <div className="hdr">
         <div>
-          <div className="ticker-eyebrow">Fundamentele Analyse</div>
-          <div className="ticker-name">{ticker}</div>
+          <div className="eyebrow">Fundamentele Analyse</div>
+          <div className="ticker">{ticker}</div>
         </div>
-        <button className="back-btn" onClick={onReset}>← Nieuw aandeel</button>
-      </header>
+        <button className="back" onClick={onReset}>← Nieuw aandeel</button>
+      </div>
 
-      {/* Markt & timing */}
-      <div className="market-section">
-        <div className="section-title">Markt & Timing</div>
-        <div className="market-grid">
-          <div className="market-cell">
-            <div className="market-label">Huidige Koers</div>
-            <div className="market-value">${d?.current_price ?? '—'}</div>
-            <div className="market-sub">Live prijs</div>
+      {/* Markt */}
+      <div className="mkt">
+        <div className="stitle">Markt & Timing</div>
+        <div className="mktgrid">
+          <div className="mktcell">
+            <div className="mktlbl">Huidige Koers</div>
+            <div className="mktval">${d?.current_price ?? '—'}</div>
+            <div className="mktsub">Live prijs</div>
           </div>
-          <div className="market-cell">
-            <div className="market-label">YTD Rendement</div>
-            <div className="market-value" style={{color: ytdColor}}>
-              {d?.ytd_return_percent != null ? `${d.ytd_return_percent}%` : '—'}
-            </div>
-            <div className="market-sub">Dit kalenderjaar</div>
+          <div className="mktcell">
+            <div className="mktlbl">YTD Rendement</div>
+            <div className="mktval" style={{color: ytdClr}}>{d?.ytd_return_percent != null ? `${d.ytd_return_percent}%` : '—'}</div>
+            <div className="mktsub">Dit kalenderjaar</div>
           </div>
-          <div className="market-cell">
-            <div className="market-label">Dividendrendement</div>
-            <div className="market-value" style={{color: d?.dividend_yield_percent > 0 ? '#22c55e' : '#555566'}}>
+          <div className="mktcell">
+            <div className="mktlbl">Dividendrendement</div>
+            <div className="mktval" style={{color: d?.dividend_yield_percent > 0 ? '#22c55e' : '#444d62'}}>
               {d?.dividend_yield_percent > 0 ? `${d.dividend_yield_percent}%` : 'Geen dividend'}
             </div>
-            <div className="market-sub">Indicated annual yield</div>
+            <div className="mktsub">Indicated annual yield</div>
           </div>
         </div>
         {d?.week52_high && d?.week52_low && (
-          <div className="week52-wrap">
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:4}}>
-              <span style={{fontSize:10, fontWeight:600, letterSpacing:'0.1em', textTransform:'uppercase', color:'#555566'}}>52-Week Range</span>
-              {d?.week52_position != null && (
-                <span style={{fontSize:11, color:'#888899', fontFamily:'JetBrains Mono,monospace'}}>{d.week52_position}% van laagste naar hoogste</span>
-              )}
+          <div className="w52">
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+              <span style={{fontSize:10,fontWeight:600,letterSpacing:'.1em',textTransform:'uppercase',color:'#333d52'}}>52-Week Range</span>
+              {d?.week52_position != null && <span style={{fontSize:11,color:'#666f88',fontFamily:'JetBrains Mono,monospace'}}>{d.week52_position}% van laagste</span>}
             </div>
-            <div className="week52-bar">
-              <div className="week52-track" />
-              {d?.week52_position != null && <div className="week52-marker" style={{left:`${d.week52_position}%`}} />}
+            <div className="w52bar">
+              <div className="w52track" />
+              {d?.week52_position != null && <div className="w52pin" style={{left:`${d.week52_position}%`}} />}
             </div>
-            <div style={{display:'flex', justifyContent:'space-between', marginTop:4}}>
-              <span style={{fontSize:11, color:'#ef4444', fontFamily:'JetBrains Mono,monospace'}}>${d.week52_low}</span>
-              <span style={{fontSize:11, color:'#22c55e', fontFamily:'JetBrains Mono,monospace'}}>${d.week52_high}</span>
+            <div style={{display:'flex',justifyContent:'space-between',marginTop:4}}>
+              <span style={{fontSize:11,color:'#ef4444',fontFamily:'JetBrains Mono,monospace'}}>${d.week52_low}</span>
+              <span style={{fontSize:11,color:'#22c55e',fontFamily:'JetBrains Mono,monospace'}}>${d.week52_high}</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Fundamentele metrics */}
-      <div className="metrics-section">
-        <div className="section-title">Fundamentele Metrics</div>
-        <div className="metrics-grid">
+      {/* Metrics */}
+      <div className="msec">
+        <div className="stitle">Fundamentele Metrics</div>
+        <div className="mgrid">
           {METRICS.map(m => {
             const val = d?.[m.key]
             const s = m.score(val)
             const { label, color } = scoreToLabel(s)
-            const displayVal = val !== null && val !== undefined
-              ? (m.format ? m.format(val) : `${val}${m.suffix}`)
-              : '—'
+            const dv = val != null ? (m.format ? m.format(val) : `${val}${m.suffix}`) : '—'
             return (
-              <div key={m.key} className="metric-cell">
-                <div className="metric-top">
-                  <span className="metric-label">{m.label}</span>
-                  <span className="metric-badge" style={{background: color+'22', color}}>{label}</span>
+              <div key={m.key} className="mcell">
+                <div className="mtop">
+                  <span className="mlbl">{m.label}</span>
+                  <span className="mbadge" style={{background:color+'20',color}}>{label}</span>
                 </div>
-                <div className="metric-value" style={{color: s !== null ? color : '#555566'}}>{displayVal}</div>
-                <div className="metric-desc">{m.desc}</div>
-                <BandBar metric={m} value={val} />
+                <div className="mval" style={{color: s != null ? color : '#2a3044'}}>{dv}</div>
+                <div className="mdesc">{m.desc}</div>
+                <BandBar m={m} val={val} />
               </div>
             )
           })}
         </div>
       </div>
 
-      {/* AI analyse */}
-      <AnalyseSectie ticker={ticker} analyse={analyse} />
+      {/* AI */}
+      <AIBlok ticker={ticker} analyse={analyse} />
     </div>
   )
 }
