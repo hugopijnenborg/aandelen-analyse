@@ -54,20 +54,25 @@ const METRICS = [
 const ZONE_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']
 
 const EINDOORDEEL_CONFIG = {
-  'STERK KOOPMOMENT':     { color: '#22c55e', bg: 'linear-gradient(135deg, #052010 0%, #071a0e 100%)', border: '#14532d', icon: '🚀', short: 'Sterk Koop' },
-  'KOOPMOMENT':           { color: '#84cc16', bg: 'linear-gradient(135deg, #0a1f02 0%, #0d1a05 100%)', border: '#1a4208', icon: '✅', short: 'Koop' },
-  'NEUTRAAL':             { color: '#eab308', bg: 'linear-gradient(135deg, #1a1400 0%, #1a1600 100%)', border: '#3a2e00', icon: '⚖️', short: 'Neutraal' },
-  'WACHT OP BETERE INSTAP': { color: '#f97316', bg: 'linear-gradient(135deg, #1a0900 0%, #1a0b00 100%)', border: '#3a1800', icon: '⏳', short: 'Wacht' },
-  'VERMIJD':              { color: '#ef4444', bg: 'linear-gradient(135deg, #1a0202 0%, #1a0404 100%)', border: '#3a0808', icon: '⛔', short: 'Vermijd' },
+  'STERK KOOPMOMENT':       { color: '#22c55e', bg: 'linear-gradient(135deg, #031a09 0%, #051408 100%)', border: '#14532d', icon: '🚀' },
+  'KOOPMOMENT':             { color: '#84cc16', bg: 'linear-gradient(135deg, #0a1f02 0%, #0c1a04 100%)', border: '#254208', icon: '✅' },
+  'NEUTRAAL':               { color: '#eab308', bg: 'linear-gradient(135deg, #1a1400 0%, #181200 100%)', border: '#3a2e00', icon: '⚖️' },
+  'WACHT OP BETERE INSTAP': { color: '#f97316', bg: 'linear-gradient(135deg, #1a0800 0%, #180a00 100%)', border: '#3a1800', icon: '⏳' },
+  'VERMIJD':                { color: '#ef4444', bg: 'linear-gradient(135deg, #1a0202 0%, #180303 100%)', border: '#3a0808', icon: '⛔' },
 }
 
 function detectEindoordeel(text) {
   if (!text) return null
-  const labels = ['STERK KOOPMOMENT', 'WACHT OP BETERE INSTAP', 'KOOPMOMENT', 'NEUTRAAL', 'VERMIJD']
-  for (const l of labels) {
+  for (const l of ['STERK KOOPMOMENT', 'WACHT OP BETERE INSTAP', 'KOOPMOMENT', 'NEUTRAAL', 'VERMIJD']) {
     if (text.includes(l)) return l
   }
   return null
+}
+
+function detectKoopscore(text) {
+  if (!text) return null
+  const match = text.match(/KOOPSCORE:\s*(\d+(?:\.\d+)?)\s*\/\s*10/i)
+  return match ? parseFloat(match[1]) : null
 }
 
 function scoreToLabel(s) {
@@ -79,159 +84,337 @@ function scoreToLabel(s) {
   return { label: 'SLECHT', color: '#ef4444' }
 }
 
+function koopscoreColor(s) {
+  if (s >= 8) return '#22c55e'
+  if (s >= 6) return '#84cc16'
+  if (s >= 4) return '#eab308'
+  if (s >= 2) return '#f97316'
+  return '#ef4444'
+}
+
 function valueToPosition(value, range) {
   const [min, max] = range
   return ((Math.max(min, Math.min(max, value)) - min) / (max - min)) * 100
 }
-
 function zoneToPercent(zoneVal, range) {
   const [min, max] = range
   return ((zoneVal - min) / (max - min)) * 100
 }
 
-const styleEl = document.createElement('style')
-styleEl.textContent = `
+const css = `
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
   @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:translateY(0) } }
   @keyframes markerIn { from { opacity:0; transform:translateX(-50%) scaleY(0) } to { opacity:1; transform:translateX(-50%) scaleY(1) } }
-  @keyframes slideIn { from { opacity:0; transform:translateX(-8px) } to { opacity:1; transform:translateX(0) } }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #080b0f; color: #d4d8e0; font-family: 'Inter', sans-serif; }
+  @keyframes scoreIn { from { opacity:0; transform:scale(0.8) } to { opacity:1; transform:scale(1) } }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#080b0f; color:#d4d8e0; font-family:'Inter',sans-serif; }
 
-  .result-page { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; animation: fadeUp 0.4s ease; }
-  .result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #1a1f2e; }
-  .ticker-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: #f97316; margin-bottom: 6px; }
-  .ticker-name { font-family: 'JetBrains Mono', monospace; font-size: clamp(2.4rem, 6vw, 3.8rem); font-weight: 700; color: #fff; letter-spacing: -0.02em; line-height: 1; }
-  .back-btn { background: transparent; border: 1px solid #1a1f2e; color: #555566; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: 'Inter', sans-serif; transition: all 0.15s; white-space: nowrap; }
-  .back-btn:hover { border-color: #f97316; color: #f97316; }
-  .data-warning { background: #1a0f00; border: 1px solid #f97316; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; color: #f97316; font-size: 13px; }
+  /* Layout */
+  .result-page { max-width:960px; margin:0 auto; padding:2rem 1.5rem 5rem; animation:fadeUp 0.4s ease; }
+  .result-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2rem; padding-bottom:1.5rem; border-bottom:1px solid #1a1f2e; }
+  .ticker-eyebrow { font-size:11px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:#f97316; margin-bottom:6px; }
+  .ticker-name { font-family:'JetBrains Mono',monospace; font-size:clamp(2.4rem,6vw,3.8rem); font-weight:700; color:#fff; letter-spacing:-0.02em; line-height:1; }
+  .back-btn { background:transparent; border:1px solid #1a1f2e; color:#555566; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-family:'Inter',sans-serif; transition:all 0.15s; white-space:nowrap; }
+  .back-btn:hover { border-color:#f97316; color:#f97316; }
+  .data-warning { background:#1a0f00; border:1px solid #f97316; border-radius:8px; padding:12px 16px; margin-bottom:24px; color:#f97316; font-size:13px; }
+  .section-title { font-size:10px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:#555566; margin-bottom:12px; }
 
-  .market-section { margin-bottom: 2rem; }
-  .section-title { font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: #555566; margin-bottom: 12px; }
-  .market-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #1a1f2e; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
-  .market-cell { background: #0d1117; padding: 14px 16px; }
-  .market-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #555566; margin-bottom: 6px; }
-  .market-value { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: #e8eaf0; }
-  .market-sub { font-size: 11px; color: #555566; margin-top: 3px; }
-  .week52-bar { margin-top: 8px; position: relative; }
-  .week52-track { height: 6px; background: linear-gradient(to right, #ef4444, #eab308, #22c55e); border-radius: 3px; }
-  .week52-marker { position: absolute; top: -3px; transform: translateX(-50%); width: 3px; height: 12px; background: #fff; border-radius: 2px; box-shadow: 0 0 6px rgba(255,255,255,0.5); }
+  /* Markt */
+  .market-section { margin-bottom:2rem; }
+  .market-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#1a1f2e; border:1px solid #1a1f2e; border-radius:10px; overflow:hidden; }
+  .market-cell { background:#0d1117; padding:14px 16px; }
+  .market-label { font-size:10px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#555566; margin-bottom:6px; }
+  .market-value { font-family:'JetBrains Mono',monospace; font-size:1.2rem; font-weight:700; color:#e8eaf0; }
+  .market-sub { font-size:11px; color:#555566; margin-top:3px; }
+  .week52-wrap { background:#0d1117; border:1px solid #1a1f2e; border-radius:10px; padding:16px 20px; margin-top:1px; }
+  .week52-bar { position:relative; margin:8px 0 6px; }
+  .week52-track { height:6px; background:linear-gradient(to right,#ef4444,#eab308,#22c55e); border-radius:3px; }
+  .week52-marker { position:absolute; top:-3px; transform:translateX(-50%); width:3px; height:12px; background:#fff; border-radius:2px; box-shadow:0 0 6px rgba(255,255,255,0.5); }
 
-  .metrics-section { margin-bottom: 2rem; }
-  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1a1f2e; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
-  .metric-cell { background: #0d1117; padding: 18px 20px 22px; }
-  .metric-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-  .metric-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #555566; }
-  .metric-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; padding: 2px 7px; border-radius: 3px; text-transform: uppercase; }
-  .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 1.7rem; font-weight: 700; line-height: 1; margin-bottom: 4px; word-break: break-word; }
-  .metric-desc { font-size: 11px; color: #444455; margin-bottom: 16px; }
-  .band-container { position: relative; margin-bottom: 6px; }
-  .band-track { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 1px; }
-  .band-zone { flex: 1; border-radius: 2px; opacity: 0.35; }
-  .band-zone.active { opacity: 1; }
-  .band-marker-wrap { position: absolute; top: -3px; transform: translateX(-50%); animation: markerIn 0.4s ease 0.3s both; pointer-events: none; }
-  .band-marker { width: 3px; height: 14px; border-radius: 2px; background: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.6); }
-  .band-labels { display: flex; justify-content: space-between; margin-top: 5px; }
-  .band-label { font-size: 9px; color: #333344; font-family: 'JetBrains Mono', monospace; }
-  .band-label.active { color: #888899; }
+  /* Metrics */
+  .metrics-section { margin-bottom:2rem; }
+  .metrics-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:#1a1f2e; border:1px solid #1a1f2e; border-radius:10px; overflow:hidden; }
+  .metric-cell { background:#0d1117; padding:18px 20px 22px; }
+  .metric-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .metric-label { font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:#555566; }
+  .metric-badge { font-size:9px; font-weight:700; letter-spacing:0.1em; padding:2px 7px; border-radius:3px; text-transform:uppercase; }
+  .metric-value { font-family:'JetBrains Mono',monospace; font-size:1.7rem; font-weight:700; line-height:1; margin-bottom:4px; word-break:break-word; }
+  .metric-desc { font-size:11px; color:#444455; margin-bottom:16px; }
+  .band-container { position:relative; margin-bottom:6px; }
+  .band-track { display:flex; height:8px; border-radius:4px; overflow:hidden; gap:1px; }
+  .band-zone { flex:1; border-radius:2px; opacity:0.35; }
+  .band-zone.active { opacity:1; }
+  .band-marker-wrap { position:absolute; top:-3px; transform:translateX(-50%); animation:markerIn 0.4s ease 0.3s both; pointer-events:none; }
+  .band-marker { width:3px; height:14px; border-radius:2px; background:#fff; box-shadow:0 0 6px rgba(255,255,255,0.6); }
+  .band-labels { display:flex; justify-content:space-between; margin-top:5px; }
+  .band-label { font-size:9px; color:#333344; font-family:'JetBrains Mono',monospace; }
+  .band-label.active { color:#888899; }
 
   /* Analyse sectie */
-  .analyse-section { border-radius: 10px; overflow: hidden; border: 1px solid #1a1f2e; }
-  .analyse-header { padding: 14px 24px; border-bottom: 1px solid #1a1f2e; background: #0d1117; display: flex; align-items: center; gap: 10px; }
-  .analyse-dot { width: 7px; height: 7px; background: #f97316; border-radius: 50%; }
-  .analyse-title { font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: #f97316; }
+  .analyse-section { border-radius:12px; overflow:hidden; border:1px solid #1a1f2e; margin-bottom:0; }
+  .analyse-header { padding:14px 24px; background:#0d1117; border-bottom:1px solid #1a1f2e; display:flex; align-items:center; gap:10px; }
+  .analyse-dot { width:7px; height:7px; background:#f97316; border-radius:50%; }
+  .analyse-title { font-size:10px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:#f97316; }
 
   /* Eindoordeel banner */
-  .eindoordeel-banner { padding: 24px 28px; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid transparent; animation: slideIn 0.4s ease; }
-  .eindoordeel-icon { font-size: 2.2rem; line-height: 1; flex-shrink: 0; }
-  .eindoordeel-right { flex: 1; }
-  .eindoordeel-label { font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px; opacity: 0.6; }
-  .eindoordeel-verdict { font-family: 'JetBrains Mono', monospace; font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .eindoordeel-banner { padding:28px; display:flex; align-items:center; gap:24px; border-bottom:1px solid transparent; }
+  .eindoordeel-icon { font-size:2.4rem; line-height:1; flex-shrink:0; }
+  .eindoordeel-right { flex:1; }
+  .eindoordeel-sublabel { font-size:9px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; opacity:0.55; margin-bottom:5px; }
+  .eindoordeel-verdict { font-family:'JetBrains Mono',monospace; font-size:clamp(1.5rem,4vw,2.2rem); font-weight:700; letter-spacing:-0.02em; line-height:1; }
+
+  /* Koopscore ring */
+  .koopscore-wrap { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .koopscore-ring { position:relative; width:72px; height:72px; animation:scoreIn 0.5s ease 0.2s both; }
+  .koopscore-ring svg { transform:rotate(-90deg); }
+  .koopscore-number { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:1.3rem; font-weight:700; }
+  .koopscore-label { font-size:9px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:#555566; }
 
   /* Analyse body */
-  .analyse-body { padding: 28px; background: #0d1117; }
-  .analyse-body h2 { font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #555566; margin: 2em 0 0.8em; padding-bottom: 8px; border-bottom: 1px solid #131820; }
-  .analyse-body h2:first-child { margin-top: 0; }
-  .analyse-body h3 { font-size: 13px; font-weight: 600; color: #c8d0e0; margin: 1.4em 0 0.5em; }
-  .analyse-body p { color: #7a8499; font-size: 14px; line-height: 1.85; margin-bottom: 0.8em; }
-  .analyse-body strong { color: #c8d0e0; font-weight: 600; }
-  .analyse-body em { color: #9aa3b4; font-style: italic; }
-  .analyse-body ul { padding-left: 0; margin-bottom: 0.8em; list-style: none; }
-  .analyse-body ul li { color: #7a8499; font-size: 14px; line-height: 1.85; padding-left: 20px; position: relative; }
-  .analyse-body ul li::before { content: '—'; position: absolute; left: 0; color: #333344; }
-  .analyse-body ul li strong { color: #c8d0e0; }
-  .analyse-body ol { padding-left: 1.4em; margin-bottom: 0.8em; }
-  .analyse-body ol li { color: #7a8499; font-size: 14px; line-height: 1.85; }
-  .analyse-body hr { border: none; border-top: 1px solid #131820; margin: 1.6em 0; }
+  .analyse-body { background:#0d1117; }
+
+  /* Samenvatting blok */
+  .samenvatting-blok { padding:24px 28px; border-bottom:1px solid #131820; }
+  .samenvatting-blok p { color:#8892a4; font-size:14px; line-height:1.85; }
+
+  /* Punten grid */
+  .punten-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:#131820; border-bottom:1px solid #131820; }
+  .punten-blok { background:#0d1117; padding:22px 24px; }
+  .punten-header { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+  .punten-icon { font-size:1rem; }
+  .punten-title { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; }
+  .punten-list { list-style:none; display:flex; flex-direction:column; gap:8px; }
+  .punten-item { display:flex; gap:10px; align-items:flex-start; }
+  .punten-bullet { width:16px; height:16px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; margin-top:2px; }
+  .punten-text { color:#8892a4; font-size:13px; line-height:1.6; }
+  .punten-text strong { color:#c8d0e0; }
+
+  /* Vooruitzichten blok */
+  .vooruitzichten-blok { padding:22px 28px; border-bottom:1px solid #131820; }
+  .vooruitzichten-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .vooruitzichten-icon { font-size:1rem; }
+  .vooruitzichten-title { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#818cf8; }
+  .vooruitzichten-body p { color:#8892a4; font-size:14px; line-height:1.85; margin-bottom:0.6em; }
+  .vooruitzichten-body p:last-child { margin-bottom:0; }
+  .vooruitzichten-body strong { color:#c8d0e0; }
+
+  /* Conclusie blok */
+  .conclusie-blok { padding:22px 28px 28px; }
+  .conclusie-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .conclusie-icon { font-size:1rem; }
+  .conclusie-title { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#f97316; }
+  .conclusie-body p { color:#9aa3b4; font-size:14px; line-height:1.85; margin-bottom:0.6em; }
+  .conclusie-body p:last-child { margin-bottom:0; }
+  .conclusie-body strong { color:#e0e4ee; }
 
   /* Zoekpagina */
-  .search-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: radial-gradient(ellipse 80% 60% at 50% -10%, #1a0d00 0%, #080b0f 55%); }
-  .search-inner { max-width: 540px; width: 100%; text-align: center; }
-  .search-eyebrow { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #f97316; border: 1px solid #3a1a00; background: #110900; padding: 4px 12px; border-radius: 20px; margin-bottom: 24px; }
-  .search-title { font-family: 'JetBrains Mono', monospace; font-size: clamp(2rem, 6vw, 3rem); font-weight: 700; color: #fff; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 14px; }
-  .search-title span { color: #f97316; }
-  .search-sub { font-size: 15px; color: #555566; line-height: 1.6; margin-bottom: 36px; }
-  .search-row { display: flex; gap: 8px; background: #0d1117; border: 1px solid #1a1f2e; border-radius: 10px; padding: 7px; margin-bottom: 12px; transition: border-color 0.2s; }
-  .search-row:focus-within { border-color: #f97316; }
-  .search-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 600; letter-spacing: 0.04em; padding: 8px 12px; }
-  .search-input::placeholder { color: #2a2f3e; }
-  .search-btn { background: #f97316; color: #fff; border: none; border-radius: 7px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.15s; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
-  .search-btn:hover { background: #ea6c0a; }
-  .search-btn:disabled { opacity: 0.5; cursor: default; }
-  .search-error { color: #ef4444; font-size: 13px; margin-top: 8px; }
-  .loading-state { margin-top: 32px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .loading-text { color: #555566; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
-  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 40px; }
-  .tag { font-size: 11px; color: #333344; background: #0d1117; border: 1px solid #1a1f2e; padding: 4px 10px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
-  .spinner { width: 24px; height: 24px; border: 2px solid #1a1f2e; border-top-color: #f97316; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
-  .spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  .search-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; background:radial-gradient(ellipse 80% 60% at 50% -10%,#1a0d00 0%,#080b0f 55%); }
+  .search-inner { max-width:540px; width:100%; text-align:center; }
+  .search-eyebrow { display:inline-block; font-size:10px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; color:#f97316; border:1px solid #3a1a00; background:#110900; padding:4px 12px; border-radius:20px; margin-bottom:24px; }
+  .search-title { font-family:'JetBrains Mono',monospace; font-size:clamp(2rem,6vw,3rem); font-weight:700; color:#fff; letter-spacing:-0.03em; line-height:1.1; margin-bottom:14px; }
+  .search-title span { color:#f97316; }
+  .search-sub { font-size:15px; color:#555566; line-height:1.6; margin-bottom:36px; }
+  .search-row { display:flex; gap:8px; background:#0d1117; border:1px solid #1a1f2e; border-radius:10px; padding:7px; margin-bottom:12px; transition:border-color 0.2s; }
+  .search-row:focus-within { border-color:#f97316; }
+  .search-input { flex:1; background:transparent; border:none; outline:none; color:#fff; font-family:'JetBrains Mono',monospace; font-size:1.3rem; font-weight:600; letter-spacing:0.04em; padding:8px 12px; }
+  .search-input::placeholder { color:#2a2f3e; }
+  .search-btn { background:#f97316; color:#fff; border:none; border-radius:7px; padding:10px 24px; font-size:14px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:background 0.15s; white-space:nowrap; display:flex; align-items:center; gap:8px; }
+  .search-btn:hover { background:#ea6c0a; }
+  .search-btn:disabled { opacity:0.5; cursor:default; }
+  .search-error { color:#ef4444; font-size:13px; margin-top:8px; }
+  .loading-state { margin-top:32px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .loading-text { color:#555566; font-size:13px; font-family:'JetBrains Mono',monospace; }
+  .tag-row { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:40px; }
+  .tag { font-size:11px; color:#333344; background:#0d1117; border:1px solid #1a1f2e; padding:4px 10px; border-radius:4px; font-family:'JetBrains Mono',monospace; }
+  .spinner { width:24px; height:24px; border:2px solid #1a1f2e; border-top-color:#f97316; border-radius:50%; animation:spin 0.7s linear infinite; display:inline-block; }
+  .spinner-sm { width:16px; height:16px; border:2px solid rgba(255,255,255,0.2); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; display:inline-block; }
 
-  @media (max-width: 600px) { .metrics-grid { grid-template-columns: 1fr; } .market-grid { grid-template-columns: 1fr 1fr; } .analyse-body { padding: 20px; } }
+  @media (max-width:640px) {
+    .metrics-grid { grid-template-columns:1fr; }
+    .market-grid { grid-template-columns:1fr 1fr; }
+    .punten-grid { grid-template-columns:1fr; }
+    .eindoordeel-banner { flex-wrap:wrap; }
+  }
 `
+const styleEl = document.createElement('style')
+styleEl.textContent = css
 document.head.appendChild(styleEl)
 
 function BandBar({ metric, value }) {
+  const colors = metric.lager_is_beter ? [...ZONE_COLORS].reverse() : ZONE_COLORS
   if (value === null || value === undefined) {
     return (
       <div className="band-container">
-        <div className="band-track">
-          {ZONE_COLORS.map((c, i) => <div key={i} className="band-zone" style={{ background: c }} />)}
-        </div>
-        <div className="band-labels">
-          {metric.bandLabels.map((l, i) => <span key={i} className="band-label">{l}</span>)}
-        </div>
+        <div className="band-track">{ZONE_COLORS.map((c,i) => <div key={i} className="band-zone" style={{background:c}} />)}</div>
+        <div className="band-labels">{metric.bandLabels.map((l,i) => <span key={i} className="band-label">{l}</span>)}</div>
       </div>
     )
   }
   const pos = valueToPosition(value, metric.range)
-  const zoneBoundaries = metric.zones.map(z => zoneToPercent(z, metric.range))
-  const zoneWidths = [
-    zoneBoundaries[0],
-    zoneBoundaries[1] - zoneBoundaries[0],
-    zoneBoundaries[2] - zoneBoundaries[1],
-    zoneBoundaries[3] - zoneBoundaries[2],
-    100 - zoneBoundaries[3],
-  ]
+  const zb = metric.zones.map(z => zoneToPercent(z, metric.range))
+  const zoneWidths = [zb[0], zb[1]-zb[0], zb[2]-zb[1], zb[3]-zb[2], 100-zb[3]]
   const activeZone = metric.lager_is_beter
     ? (value < metric.zones[0] ? 4 : value < metric.zones[1] ? 3 : value < metric.zones[2] ? 2 : value < metric.zones[3] ? 1 : 0)
     : (value > metric.zones[3] ? 4 : value > metric.zones[2] ? 3 : value > metric.zones[1] ? 2 : value > metric.zones[0] ? 1 : 0)
-  const colors = metric.lager_is_beter ? [...ZONE_COLORS].reverse() : ZONE_COLORS
   return (
     <div className="band-container">
       <div className="band-track">
-        {zoneWidths.map((w, i) => (
-          <div key={i} className={`band-zone${i === activeZone ? ' active' : ''}`}
-            style={{ flex: `0 0 ${w}%`, background: colors[i] }} />
+        {zoneWidths.map((w,i) => (
+          <div key={i} className={`band-zone${i===activeZone?' active':''}`} style={{flex:`0 0 ${w}%`, background:colors[i]}} />
         ))}
       </div>
-      <div className="band-marker-wrap" style={{ left: `${pos}%` }}>
-        <div className="band-marker" style={{ background: colors[activeZone] }} />
+      <div className="band-marker-wrap" style={{left:`${pos}%`}}>
+        <div className="band-marker" style={{background:colors[activeZone]}} />
       </div>
       <div className="band-labels">
-        {metric.bandLabels.map((l, i) => (
-          <span key={i} className={`band-label${i === activeZone ? ' active' : ''}`}>{l}</span>
-        ))}
+        {metric.bandLabels.map((l,i) => <span key={i} className={`band-label${i===activeZone?' active':''}`}>{l}</span>)}
+      </div>
+    </div>
+  )
+}
+
+function KoopscoreRing({ score }) {
+  const color = koopscoreColor(score)
+  const r = 28, circ = 2 * Math.PI * r
+  const fill = (score / 10) * circ
+  return (
+    <div className="koopscore-wrap">
+      <div className="koopscore-ring">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r={r} fill="none" stroke="#1a1f2e" strokeWidth="5" />
+          <circle cx="36" cy="36" r={r} fill="none" stroke={color} strokeWidth="5"
+            strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" />
+        </svg>
+        <div className="koopscore-number" style={{color}}>{score}</div>
+      </div>
+      <div className="koopscore-label">/ 10</div>
+    </div>
+  )
+}
+
+// Parst de markdown van Claude in secties
+function parseAnalyse(text) {
+  if (!text) return {}
+  const get = (label) => {
+    const re = new RegExp(`##\\s*${label}\\s*\\n([\\s\\S]*?)(?=\\n##|$)`, 'i')
+    const m = text.match(re)
+    return m ? m[1].trim() : null
+  }
+  const parseBullets = (raw) => {
+    if (!raw) return []
+    return raw.split('\n').map(l => l.replace(/^[-*]\s*/, '').trim()).filter(Boolean)
+  }
+  return {
+    samenvatting: get('Samenvatting'),
+    sterkePunten: parseBullets(get('Sterke punten')),
+    aandachtspunten: parseBullets(get('Aandachtspunten')),
+    vooruitzichten: get('Vooruitzichten'),
+    conclusie: get('Eindoordeel'),
+  }
+}
+
+function AnalyseSectie({ ticker, analyse }) {
+  const eindoordeel = detectEindoordeel(analyse)
+  const koopscore = detectKoopscore(analyse)
+  const eoConfig = eindoordeel ? EINDOORDEEL_CONFIG[eindoordeel] : null
+  const parsed = parseAnalyse(analyse)
+
+  // Verwijder de KOOPSCORE: X/10 regel uit conclusie tekst
+  const conclusieTekst = parsed.conclusie
+    ? parsed.conclusie.replace(/\*\*(STERK KOOPMOMENT|KOOPMOMENT|NEUTRAAL|WACHT OP BETERE INSTAP|VERMIJD)\*\*/g, '').replace(/KOOPSCORE:\s*\d+(?:\.\d+)?\s*\/\s*10/gi, '').trim()
+    : null
+
+  return (
+    <div className="analyse-section">
+      <div className="analyse-header">
+        <span className="analyse-dot" />
+        <span className="analyse-title">AI Beoordeling — {ticker}</span>
+      </div>
+
+      {/* Eindoordeel + koopscore */}
+      {eoConfig && (
+        <div className="eindoordeel-banner" style={{background: eoConfig.bg, borderBottomColor: eoConfig.border}}>
+          <span className="eindoordeel-icon">{eoConfig.icon}</span>
+          <div className="eindoordeel-right">
+            <div className="eindoordeel-sublabel" style={{color: eoConfig.color}}>Eindoordeel</div>
+            <div className="eindoordeel-verdict" style={{color: eoConfig.color}}>{eindoordeel}</div>
+          </div>
+          {koopscore !== null && <KoopscoreRing score={koopscore} />}
+        </div>
+      )}
+
+      <div className="analyse-body">
+        {/* Samenvatting */}
+        {parsed.samenvatting && (
+          <div className="samenvatting-blok">
+            <ReactMarkdown>{parsed.samenvatting}</ReactMarkdown>
+          </div>
+        )}
+
+        {/* Sterke punten + Aandachtspunten */}
+        {(parsed.sterkePunten?.length > 0 || parsed.aandachtspunten?.length > 0) && (
+          <div className="punten-grid">
+            {parsed.sterkePunten?.length > 0 && (
+              <div className="punten-blok">
+                <div className="punten-header">
+                  <span className="punten-icon">✅</span>
+                  <span className="punten-title" style={{color:'#22c55e'}}>Sterke punten</span>
+                </div>
+                <ul className="punten-list">
+                  {parsed.sterkePunten.map((p, i) => (
+                    <li key={i} className="punten-item">
+                      <span className="punten-bullet" style={{background:'#22c55e22', color:'#22c55e'}}>+</span>
+                      <span className="punten-text"><ReactMarkdown>{p}</ReactMarkdown></span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {parsed.aandachtspunten?.length > 0 && (
+              <div className="punten-blok" style={{borderLeft:'1px solid #131820'}}>
+                <div className="punten-header">
+                  <span className="punten-icon">⚠️</span>
+                  <span className="punten-title" style={{color:'#f97316'}}>Aandachtspunten</span>
+                </div>
+                <ul className="punten-list">
+                  {parsed.aandachtspunten.map((p, i) => (
+                    <li key={i} className="punten-item">
+                      <span className="punten-bullet" style={{background:'#f9731622', color:'#f97316'}}>!</span>
+                      <span className="punten-text"><ReactMarkdown>{p}</ReactMarkdown></span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Vooruitzichten */}
+        {parsed.vooruitzichten && (
+          <div className="vooruitzichten-blok">
+            <div className="vooruitzichten-header">
+              <span className="vooruitzichten-icon">🔭</span>
+              <span className="vooruitzichten-title">Vooruitzichten</span>
+            </div>
+            <div className="vooruitzichten-body">
+              <ReactMarkdown>{parsed.vooruitzichten}</ReactMarkdown>
+            </div>
+          </div>
+        )}
+
+        {/* Conclusie / koopadvies */}
+        {conclusieTekst && (
+          <div className="conclusie-blok">
+            <div className="conclusie-header">
+              <span className="conclusie-icon">💡</span>
+              <span className="conclusie-title">Koopadvies</span>
+            </div>
+            <div className="conclusie-body">
+              <ReactMarkdown>{conclusieTekst}</ReactMarkdown>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -249,7 +432,7 @@ export default function App() {
     try {
       const res = await fetch(WEBHOOK, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ ticker: ticker.trim().toUpperCase() }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -265,9 +448,9 @@ export default function App() {
       <div className="search-inner">
         <span className="search-eyebrow">AI Fundamentele Analyse</span>
         <h1 className="search-title">Aandelen<span>Analyse</span></h1>
-        <p className="search-sub">Voer een ticker in voor een directe fundamentele analyse op basis van 15 financiële metrics.</p>
+        <p className="search-sub">Voer een ticker in voor een directe fundamentele analyse op basis van 15 financiële metrics en recent nieuws.</p>
         <div className="search-row">
-          <input className="search-input" type="text" placeholder="AAPL, MSFT, ADSK..."
+          <input className="search-input" type="text" placeholder="AAPL, MSFT, META..."
             value={ticker} onChange={e => setTicker(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && analyseer()} disabled={loading} autoFocus />
           <button className="search-btn" onClick={analyseer} disabled={loading || !ticker.trim()}>
@@ -276,9 +459,9 @@ export default function App() {
           </button>
         </div>
         {error && <p className="search-error">{error}</p>}
-        {loading && <div className="loading-state"><span className="spinner" /><span className="loading-text">Data ophalen · Analyse via Claude...</span></div>}
+        {loading && <div className="loading-state"><span className="spinner" /><span className="loading-text">Data ophalen · Nieuws laden · Analyse via Claude...</span></div>}
         <div className="tag-row">
-          {['P/E', 'PEG', 'P/B', 'EPS', 'D/E', 'Current Ratio', 'ROE', 'Brutomarge', 'Nettomarge', 'Omzetgroei', 'FCF', '52W Range', 'YTD', 'Dividend'].map(t => (
+          {['P/E', 'PEG', 'P/B', 'EPS', 'D/E', 'ROE', 'Brutomarge', 'Nettomarge', 'Omzetgroei', 'FCF', '52W Range', 'Dividend', 'Nieuws'].map(t => (
             <span key={t} className="tag">{t}</span>
           ))}
         </div>
@@ -292,17 +475,10 @@ function ResultPage({ result, onReset }) {
   const values = [d?.pe_ratio, d?.eps, d?.debt_to_equity, d?.roe_percent, d?.profit_margin_percent, d?.revenue_growth_percent, d?.free_cash_flow_billions, d?.peg_ratio, d?.gross_margin_percent, d?.current_ratio]
   const isDataPoor = values.filter(v => v === null || v === undefined).length >= 5
   const ytdColor = d?.ytd_return_percent > 0 ? '#22c55e' : d?.ytd_return_percent < 0 ? '#ef4444' : '#555566'
-  const eindoordeel = detectEindoordeel(analyse)
-  const eoConfig = eindoordeel ? EINDOORDEEL_CONFIG[eindoordeel] : null
-
-  // Filter eindoordeel sectie uit de markdown zodat die niet dubbel staat
-  const analyseZonderEindoordeel = analyse
-    ? analyse.replace(/##\s*Eindoordeel[\s\S]*?(?=##|$)/i, '').trim()
-    : ''
 
   return (
     <div className="result-page">
-      {isDataPoor && <div className="data-warning">⚠️ Beperkte data — mogelijk verlieslatend of recent beursgenoteerd. Traditionele metrics niet volledig toepasbaar.</div>}
+      {isDataPoor && <div className="data-warning">⚠️ Beperkte data — mogelijk verlieslatend of recent beursgenoteerd.</div>}
 
       <header className="result-header">
         <div>
@@ -323,38 +499,34 @@ function ResultPage({ result, onReset }) {
           </div>
           <div className="market-cell">
             <div className="market-label">YTD Rendement</div>
-            <div className="market-value" style={{ color: ytdColor }}>
+            <div className="market-value" style={{color: ytdColor}}>
               {d?.ytd_return_percent != null ? `${d.ytd_return_percent}%` : '—'}
             </div>
             <div className="market-sub">Dit kalenderjaar</div>
           </div>
           <div className="market-cell">
             <div className="market-label">Dividendrendement</div>
-            <div className="market-value" style={{ color: d?.dividend_yield_percent > 0 ? '#22c55e' : '#555566' }}>
+            <div className="market-value" style={{color: d?.dividend_yield_percent > 0 ? '#22c55e' : '#555566'}}>
               {d?.dividend_yield_percent > 0 ? `${d.dividend_yield_percent}%` : 'Geen dividend'}
             </div>
             <div className="market-sub">Indicated annual yield</div>
           </div>
         </div>
         {d?.week52_high && d?.week52_low && (
-          <div style={{ background: '#0d1117', border: '1px solid #1a1f2e', borderRadius: 10, padding: '16px 20px', marginTop: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555566' }}>52-Week Range</span>
+          <div className="week52-wrap">
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:4}}>
+              <span style={{fontSize:10, fontWeight:600, letterSpacing:'0.1em', textTransform:'uppercase', color:'#555566'}}>52-Week Range</span>
               {d?.week52_position != null && (
-                <span style={{ fontSize: 11, color: '#888899', fontFamily: 'JetBrains Mono, monospace' }}>
-                  {d.week52_position}% van laagste naar hoogste
-                </span>
+                <span style={{fontSize:11, color:'#888899', fontFamily:'JetBrains Mono,monospace'}}>{d.week52_position}% van laagste naar hoogste</span>
               )}
             </div>
             <div className="week52-bar">
               <div className="week52-track" />
-              {d?.week52_position != null && (
-                <div className="week52-marker" style={{ left: `${d.week52_position}%` }} />
-              )}
+              {d?.week52_position != null && <div className="week52-marker" style={{left:`${d.week52_position}%`}} />}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ fontSize: 11, color: '#ef4444', fontFamily: 'JetBrains Mono, monospace' }}>${d.week52_low}</span>
-              <span style={{ fontSize: 11, color: '#22c55e', fontFamily: 'JetBrains Mono, monospace' }}>${d.week52_high}</span>
+            <div style={{display:'flex', justifyContent:'space-between', marginTop:4}}>
+              <span style={{fontSize:11, color:'#ef4444', fontFamily:'JetBrains Mono,monospace'}}>${d.week52_low}</span>
+              <span style={{fontSize:11, color:'#22c55e', fontFamily:'JetBrains Mono,monospace'}}>${d.week52_high}</span>
             </div>
           </div>
         )}
@@ -375,9 +547,9 @@ function ResultPage({ result, onReset }) {
               <div key={m.key} className="metric-cell">
                 <div className="metric-top">
                   <span className="metric-label">{m.label}</span>
-                  <span className="metric-badge" style={{ background: color + '22', color }}>{label}</span>
+                  <span className="metric-badge" style={{background: color+'22', color}}>{label}</span>
                 </div>
-                <div className="metric-value" style={{ color: s !== null ? color : '#555566' }}>{displayVal}</div>
+                <div className="metric-value" style={{color: s !== null ? color : '#555566'}}>{displayVal}</div>
                 <div className="metric-desc">{m.desc}</div>
                 <BandBar metric={m} value={val} />
               </div>
@@ -386,27 +558,8 @@ function ResultPage({ result, onReset }) {
         </div>
       </div>
 
-      {/* AI Analyse */}
-      <div className="analyse-section">
-        <div className="analyse-header">
-          <span className="analyse-dot" />
-          <span className="analyse-title">AI Beoordeling — {ticker}</span>
-        </div>
-
-        {eoConfig && (
-          <div className="eindoordeel-banner" style={{ background: eoConfig.bg, borderBottom: `1px solid ${eoConfig.border}` }}>
-            <span className="eindoordeel-icon">{eoConfig.icon}</span>
-            <div className="eindoordeel-right">
-              <div className="eindoordeel-label" style={{ color: eoConfig.color }}>Eindoordeel</div>
-              <div className="eindoordeel-verdict" style={{ color: eoConfig.color }}>{eindoordeel}</div>
-            </div>
-          </div>
-        )}
-
-        <div className="analyse-body">
-          <ReactMarkdown>{analyseZonderEindoordeel}</ReactMarkdown>
-        </div>
-      </div>
+      {/* AI analyse */}
+      <AnalyseSectie ticker={ticker} analyse={analyse} />
     </div>
   )
 }
