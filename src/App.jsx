@@ -224,9 +224,16 @@ function BandBar({ m, val }) {
   const pos = vtp(val, m.range)
   const zb = m.zones.map(z => ztp(z, m.range))
   const ws = [zb[0], zb[1]-zb[0], zb[2]-zb[1], zb[3]-zb[2], 100-zb[3]]
-  const az = m.lager_is_beter
-    ? (val < m.zones[0] ? 4 : val < m.zones[1] ? 3 : val < m.zones[2] ? 2 : val < m.zones[3] ? 1 : 0)
-    : (val > m.zones[3] ? 4 : val > m.zones[2] ? 3 : val > m.zones[1] ? 2 : val > m.zones[0] ? 1 : 0)
+
+  // Bepaal activeZone puur op basis van waar de marker (pos) valt in de balk
+  // Zones zijn: 0=eerste, 1=tweede, etc. — grenzen zijn zb[0], zb[1], zb[2], zb[3]
+  let az = 0
+  if (pos >= zb[3]) az = 4
+  else if (pos >= zb[2]) az = 3
+  else if (pos >= zb[1]) az = 2
+  else if (pos >= zb[0]) az = 1
+  else az = 0
+
   return (
     <div className="bcon">
       <div className="btrack">
@@ -358,6 +365,17 @@ function AIBlok({ ticker, analyse }) {
             <span className="khdr-icon">💡</span>
             <span className="khdr-title">Koopadvies</span>
           </div>
+          {analyse.richtprijs != null && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '10px',
+              background: '#1a0f00', border: '1px solid #3a1800',
+              borderRadius: '8px', padding: '10px 16px', marginBottom: '14px'
+            }}>
+              <span style={{fontSize: '11px', fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: '#f97316'}}>Richtprijs</span>
+              <span style={{fontFamily: 'JetBrains Mono, monospace', fontSize: '1.3rem', fontWeight: 700, color: '#f97316'}}>${analyse.richtprijs}</span>
+              <span style={{fontSize: '12px', color: '#664422'}}>Interessant vanaf deze koers</span>
+            </div>
+          )}
           <p className="ktext">{analyse.koopadvies}</p>
         </div>
       )}
