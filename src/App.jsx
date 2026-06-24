@@ -99,6 +99,8 @@ styleEl.textContent = `
   .spinner { width: 24px; height: 24px; border: 2px solid #1a1f2e; border-top-color: #f97316; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
   .spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
 
+  .data-warning { background: #1a0f00; border: 1px solid #f97316; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; color: #f97316; font-size: 13px; line-height: 1.5; }
+
   @media (max-width: 520px) {
     .metrics-grid { grid-template-columns: 1fr; }
   }
@@ -180,8 +182,17 @@ export default function App() {
 function ResultPage({ result, onReset }) {
   const { ticker, analyse, raw_data } = result
 
+  const values = [raw_data?.pe_ratio, raw_data?.eps, raw_data?.debt_to_equity, raw_data?.roe_percent, raw_data?.profit_margin_percent, raw_data?.revenue_growth_percent, raw_data?.free_cash_flow_billions, raw_data?.peg_ratio, raw_data?.gross_margin_percent, raw_data?.current_ratio]
+  const nullCount = values.filter(v => v === null || v === undefined).length
+  const isDataPoor = nullCount >= 5
+
   return (
     <div className="result-page">
+      {isDataPoor && (
+        <div className="data-warning">
+          ⚠️ Beperkte data beschikbaar — dit bedrijf is mogelijk verlieslatend of recent beursgenoteerd. Traditionele metrics zijn niet volledig toepasbaar.
+        </div>
+      )}
       <header className="result-header">
         <div>
           <div className="ticker-eyebrow">Fundamentele Analyse</div>
