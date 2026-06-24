@@ -297,13 +297,15 @@ function KoopscoreRing({ score }) {
 function parseAnalyse(text) {
   if (!text) return {}
   const get = (label) => {
-    const re = new RegExp(`##\\s*${label}\\s*\\n([\\s\\S]*?)(?=\\n##|$)`, 'i')
+    const re = new RegExp(`##\\s*${label}[^\\n]*\\n([\\s\\S]*?)(?=\\n##\\s|$)`, 'i')
     const m = text.match(re)
     return m ? m[1].trim() : null
   }
   const parseBullets = (raw) => {
     if (!raw) return []
-    return raw.split('\n').map(l => l.replace(/^[-*]\s*/, '').trim()).filter(Boolean)
+    return raw.split('\n')
+      .map(l => l.replace(/^[-*•]\s*/, '').trim())
+      .filter(l => l.length > 2)
   }
   return {
     samenvatting: get('Samenvatting'),
@@ -413,6 +415,13 @@ function AnalyseSectie({ ticker, analyse }) {
             <div className="conclusie-body">
               <ReactMarkdown>{conclusieTekst}</ReactMarkdown>
             </div>
+          </div>
+        )}
+
+        {/* Fallback: als parsing mislukt, toon ruwe analyse */}
+        {!parsed.samenvatting && !parsed.sterkePunten?.length && !parsed.vooruitzichten && !conclusieTekst && (
+          <div style={{padding:'24px 28px'}}>
+            <ReactMarkdown>{analyse}</ReactMarkdown>
           </div>
         )}
       </div>
