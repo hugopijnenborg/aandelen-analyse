@@ -4,20 +4,26 @@ import ReactMarkdown from 'react-markdown'
 const WEBHOOK = 'https://hugop123.app.n8n.cloud/webhook/aandelen-analyse'
 
 const METRICS = [
-  { key: 'pe_ratio',               label: 'P/E Ratio',       suffix: 'x',  desc: 'Koers gedeeld door winst per aandeel',
+  { key: 'pe_ratio',               label: 'P/E Ratio',         suffix: 'x',  desc: 'Koers gedeeld door winst per aandeel',
     score: v => v === null ? null : v < 0 ? 5 : v < 15 ? 90 : v < 25 ? 70 : v < 35 ? 50 : v < 50 ? 30 : 15,
     format: v => v === null ? null : v < 0 ? `${v}x (verlies)` : `${v}x` },
-  { key: 'eps',                    label: 'EPS',              suffix: '',   desc: 'Winst per aandeel (TTM)',
+  { key: 'peg_ratio',              label: 'PEG Ratio',          suffix: 'x',  desc: 'P/E gedeeld door groeipercentage',
+    score: v => v === null ? null : v < 0 ? 5 : v < 1 ? 90 : v < 1.5 ? 75 : v < 2 ? 55 : v < 3 ? 35 : 15 },
+  { key: 'eps',                    label: 'EPS',                suffix: '',   desc: 'Winst per aandeel (TTM)',
     score: v => v === null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
-  { key: 'debt_to_equity',         label: 'Debt / Equity',   suffix: 'x',  desc: 'Verhouding schuld tot eigen vermogen',
+  { key: 'debt_to_equity',         label: 'Debt / Equity',      suffix: 'x',  desc: 'Verhouding schuld tot eigen vermogen',
     score: v => v === null ? null : v < 0.5 ? 90 : v < 1 ? 70 : v < 2 ? 45 : v < 4 ? 25 : 10 },
-  { key: 'roe_percent',            label: 'ROE',             suffix: '%',  desc: 'Rendement op eigen vermogen',
+  { key: 'current_ratio',          label: 'Current Ratio',      suffix: 'x',  desc: 'Vlottende activa / kortlopende schulden',
+    score: v => v === null ? null : v > 2 ? 90 : v > 1.5 ? 75 : v > 1 ? 55 : v > 0.8 ? 30 : 10 },
+  { key: 'roe_percent',            label: 'ROE',                suffix: '%',  desc: 'Rendement op eigen vermogen',
     score: v => v === null ? null : v > 40 ? 90 : v > 20 ? 75 : v > 10 ? 55 : v > 0 ? 35 : 10 },
-  { key: 'profit_margin_percent',  label: 'Winstmarge',      suffix: '%',  desc: 'Netto winstmarge (TTM)',
+  { key: 'gross_margin_percent',   label: 'Brutomarge',         suffix: '%',  desc: 'Brutowinstmarge (TTM)',
+    score: v => v === null ? null : v > 60 ? 90 : v > 40 ? 75 : v > 25 ? 55 : v > 10 ? 35 : 10 },
+  { key: 'profit_margin_percent',  label: 'Nettomarge',         suffix: '%',  desc: 'Netto winstmarge (TTM)',
     score: v => v === null ? null : v > 25 ? 90 : v > 15 ? 75 : v > 8 ? 55 : v > 0 ? 35 : 10 },
-  { key: 'revenue_growth_percent', label: 'Omzetgroei',      suffix: '%',  desc: 'Jaar-op-jaar omzetgroei',
+  { key: 'revenue_growth_percent', label: 'Omzetgroei',         suffix: '%',  desc: 'Jaar-op-jaar omzetgroei',
     score: v => v === null ? null : v > 20 ? 90 : v > 10 ? 75 : v > 5 ? 55 : v > 0 ? 35 : 10 },
-  { key: 'free_cash_flow_billions', label: 'Free Cash Flow', suffix: 'B',  desc: 'Vrije kasstroom (TTM, miljarden USD)',
+  { key: 'free_cash_flow_billions',label: 'Free Cash Flow',     suffix: 'B',  desc: 'Vrije kasstroom (TTM, miljarden USD)',
     score: v => v === null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
 ]
 
@@ -38,31 +44,26 @@ styleEl.textContent = `
   @keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #080b0f; color: #d4d8e0; font-family: 'Inter', sans-serif; }
-  
-  .result-page { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; animation: fadeUp 0.4s ease; }
-  
-  /* Header */
+
+  .result-page { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; animation: fadeUp 0.4s ease; }
+
   .result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #1a1f2e; }
-  .ticker-block {}
   .ticker-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: #f97316; margin-bottom: 6px; }
   .ticker-name { font-family: 'JetBrains Mono', monospace; font-size: clamp(2.4rem, 6vw, 3.8rem); font-weight: 700; color: #fff; letter-spacing: -0.02em; line-height: 1; }
-  .back-btn { background: transparent; border: 1px solid #1a1f2e; color: #555566; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+  .back-btn { background: transparent; border: 1px solid #1a1f2e; color: #555566; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: 'Inter', sans-serif; transition: all 0.15s; white-space: nowrap; }
   .back-btn:hover { border-color: #f97316; color: #f97316; }
 
-  /* Metrics grid */
   .metrics-section { margin-bottom: 2.5rem; }
   .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1a1f2e; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
   .metric-cell { background: #0d1117; padding: 18px 20px; }
-  .metric-cell:last-child:nth-child(odd) { grid-column: span 2; }
   .metric-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
   .metric-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #555566; }
   .metric-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; padding: 2px 7px; border-radius: 3px; text-transform: uppercase; }
-  .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 1.9rem; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 6px; }
+  .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 1.7rem; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 6px; word-break: break-word; }
   .metric-desc { font-size: 11px; color: #444455; margin-bottom: 12px; }
   .score-bar-track { height: 3px; background: #1a1f2e; border-radius: 2px; overflow: hidden; }
   .score-bar-fill { height: 100%; border-radius: 2px; animation: barIn 0.8s ease; }
 
-  /* Analyse */
   .analyse-section { background: #0d1117; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
   .analyse-header { padding: 16px 24px; border-bottom: 1px solid #1a1f2e; display: flex; align-items: center; gap: 10px; }
   .analyse-dot { width: 8px; height: 8px; background: #f97316; border-radius: 50%; }
@@ -76,7 +77,6 @@ styleEl.textContent = `
   .analyse-body li { color: #8892a4; font-size: 14px; line-height: 1.75; }
   .analyse-body hr { border: none; border-top: 1px solid #1a1f2e; margin: 1.5em 0; }
 
-  /* Search page */
   .search-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: radial-gradient(ellipse 80% 60% at 50% -10%, #1a0d00 0%, #080b0f 55%); }
   .search-inner { max-width: 540px; width: 100%; text-align: center; }
   .search-eyebrow { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #f97316; border: 1px solid #3a1a00; background: #110900; padding: 4px 12px; border-radius: 20px; margin-bottom: 24px; }
@@ -101,7 +101,6 @@ styleEl.textContent = `
 
   @media (max-width: 520px) {
     .metrics-grid { grid-template-columns: 1fr; }
-    .metric-cell:last-child:nth-child(odd) { grid-column: span 1; }
   }
 `
 document.head.appendChild(styleEl)
@@ -140,7 +139,7 @@ export default function App() {
       <div className="search-inner">
         <span className="search-eyebrow">AI Fundamentele Analyse</span>
         <h1 className="search-title">Aandelen<span>Analyse</span></h1>
-        <p className="search-sub">Voer een ticker in voor een directe fundamentele analyse op basis van 7 financiële metrics.</p>
+        <p className="search-sub">Voer een ticker in voor een directe fundamentele analyse op basis van 10 financiële metrics.</p>
 
         <div className="search-row">
           <input
@@ -169,7 +168,7 @@ export default function App() {
         )}
 
         <div className="tag-row">
-          {['P/E Ratio', 'EPS', 'Debt/Equity', 'ROE', 'Winstmarge', 'Omzetgroei', 'FCF'].map(t => (
+          {['P/E', 'PEG', 'EPS', 'D/E', 'Current Ratio', 'ROE', 'Brutomarge', 'Nettomarge', 'Omzetgroei', 'FCF'].map(t => (
             <span key={t} className="tag">{t}</span>
           ))}
         </div>
@@ -184,7 +183,7 @@ function ResultPage({ result, onReset }) {
   return (
     <div className="result-page">
       <header className="result-header">
-        <div className="ticker-block">
+        <div>
           <div className="ticker-eyebrow">Fundamentele Analyse</div>
           <div className="ticker-name">{ticker}</div>
         </div>
@@ -197,7 +196,9 @@ function ResultPage({ result, onReset }) {
             const val = raw_data?.[m.key]
             const s = m.score(val)
             const { label, color } = scoreToLabel(s)
-            const displayVal = val !== null && val !== undefined ? (m.format ? m.format(val) : `${val}${m.suffix}`) : '—'
+            const displayVal = val !== null && val !== undefined
+              ? (m.format ? m.format(val) : `${val}${m.suffix}`)
+              : '—'
 
             return (
               <div key={m.key} className="metric-cell">
