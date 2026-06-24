@@ -4,26 +4,106 @@ import ReactMarkdown from 'react-markdown'
 const WEBHOOK = 'https://hugop123.app.n8n.cloud/webhook/aandelen-analyse'
 
 const METRICS = [
-  { key: 'pe_ratio',                label: 'P/E Ratio',       suffix: 'x',  desc: 'Koers / winst' },
-  { key: 'eps',                     label: 'EPS',             suffix: '',   desc: 'Winst per aandeel' },
-  { key: 'debt_to_equity',          label: 'Debt / Equity',   suffix: 'x',  desc: 'Schuld verhouding' },
-  { key: 'roe_percent',             label: 'ROE',             suffix: '%',  desc: 'Rendement eigen vermogen' },
-  { key: 'profit_margin_percent',   label: 'Profit Margin',   suffix: '%',  desc: 'Netto winstmarge' },
-  { key: 'revenue_growth_percent',  label: 'Revenue Growth',  suffix: '%',  desc: 'Omzetgroei' },
-  { key: 'free_cash_flow_per_share',label: 'FCF / Aandeel',   suffix: '',   desc: 'Vrije kasstroom' },
+  { key: 'pe_ratio',               label: 'P/E Ratio',       suffix: 'x',  desc: 'Koers gedeeld door winst per aandeel',
+    score: v => v === null ? null : v < 15 ? 90 : v < 25 ? 70 : v < 35 ? 50 : v < 50 ? 30 : 15 },
+  { key: 'eps',                    label: 'EPS',              suffix: '',   desc: 'Winst per aandeel (TTM)',
+    score: v => v === null ? null : v > 10 ? 90 : v > 5 ? 75 : v > 2 ? 55 : v > 0 ? 35 : 10 },
+  { key: 'debt_to_equity',         label: 'Debt / Equity',   suffix: 'x',  desc: 'Verhouding schuld tot eigen vermogen',
+    score: v => v === null ? null : v < 0.5 ? 90 : v < 1 ? 70 : v < 2 ? 45 : v < 4 ? 25 : 10 },
+  { key: 'roe_percent',            label: 'ROE',             suffix: '%',  desc: 'Rendement op eigen vermogen',
+    score: v => v === null ? null : v > 40 ? 90 : v > 20 ? 75 : v > 10 ? 55 : v > 0 ? 35 : 10 },
+  { key: 'profit_margin_percent',  label: 'Winstmarge',      suffix: '%',  desc: 'Netto winstmarge (TTM)',
+    score: v => v === null ? null : v > 25 ? 90 : v > 15 ? 75 : v > 8 ? 55 : v > 0 ? 35 : 10 },
+  { key: 'revenue_growth_percent', label: 'Omzetgroei',      suffix: '%',  desc: 'Jaar-op-jaar omzetgroei',
+    score: v => v === null ? null : v > 20 ? 90 : v > 10 ? 75 : v > 5 ? 55 : v > 0 ? 35 : 10 },
+  { key: 'free_cash_flow_per_share',label: 'FCF / Aandeel',  suffix: '',   desc: 'Vrije kasstroom per aandeel',
+    score: v => v === null ? null : v > 10 ? 90 : v > 5 ? 75 : v > 2 ? 55 : v > 0 ? 35 : 10 },
 ]
 
-function scoreColor(key, value) {
-  if (value === null) return '#6b6b80'
-  if (key === 'pe_ratio') return value < 20 ? '#22c55e' : value < 35 ? '#eab308' : '#ef4444'
-  if (key === 'debt_to_equity') return value < 0.5 ? '#22c55e' : value < 1.0 ? '#eab308' : '#ef4444'
-  if (key === 'roe_percent') return value > 20 ? '#22c55e' : value > 10 ? '#eab308' : '#ef4444'
-  if (key === 'profit_margin_percent') return value > 15 ? '#22c55e' : value > 5 ? '#eab308' : '#ef4444'
-  if (key === 'revenue_growth_percent') return value > 10 ? '#22c55e' : value > 3 ? '#eab308' : '#ef4444'
-  if (key === 'eps') return value > 3 ? '#22c55e' : value > 0 ? '#eab308' : '#ef4444'
-  if (key === 'free_cash_flow_per_share') return value > 3 ? '#22c55e' : value > 0 ? '#eab308' : '#ef4444'
-  return '#6b6b80'
+function scoreToLabel(s) {
+  if (s === null) return { label: 'N/B', color: '#555566' }
+  if (s >= 80) return { label: 'STERK', color: '#22c55e' }
+  if (s >= 60) return { label: 'GOED', color: '#84cc16' }
+  if (s >= 40) return { label: 'NEUTRAAL', color: '#eab308' }
+  if (s >= 20) return { label: 'ZWAK', color: '#f97316' }
+  return { label: 'SLECHT', color: '#ef4444' }
 }
+
+const styleEl = document.createElement('style')
+styleEl.textContent = `
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes barIn { from { width: 0 } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080b0f; color: #d4d8e0; font-family: 'Inter', sans-serif; }
+  
+  .result-page { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; animation: fadeUp 0.4s ease; }
+  
+  /* Header */
+  .result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #1a1f2e; }
+  .ticker-block {}
+  .ticker-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: #f97316; margin-bottom: 6px; }
+  .ticker-name { font-family: 'JetBrains Mono', monospace; font-size: clamp(2.4rem, 6vw, 3.8rem); font-weight: 700; color: #fff; letter-spacing: -0.02em; line-height: 1; }
+  .back-btn { background: transparent; border: 1px solid #1a1f2e; color: #555566; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+  .back-btn:hover { border-color: #f97316; color: #f97316; }
+
+  /* Metrics grid */
+  .metrics-section { margin-bottom: 2.5rem; }
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1a1f2e; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
+  .metric-cell { background: #0d1117; padding: 18px 20px; }
+  .metric-cell:last-child:nth-child(odd) { grid-column: span 2; }
+  .metric-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .metric-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #555566; }
+  .metric-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; padding: 2px 7px; border-radius: 3px; text-transform: uppercase; }
+  .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 1.9rem; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 6px; }
+  .metric-desc { font-size: 11px; color: #444455; margin-bottom: 12px; }
+  .score-bar-track { height: 3px; background: #1a1f2e; border-radius: 2px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 2px; animation: barIn 0.8s ease; }
+
+  /* Analyse */
+  .analyse-section { background: #0d1117; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
+  .analyse-header { padding: 16px 24px; border-bottom: 1px solid #1a1f2e; display: flex; align-items: center; gap: 10px; }
+  .analyse-dot { width: 8px; height: 8px; background: #f97316; border-radius: 50%; }
+  .analyse-title { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #f97316; }
+  .analyse-body { padding: 28px 24px; }
+  .analyse-body h1, .analyse-body h2, .analyse-body h3 { font-family: 'Inter', sans-serif; font-weight: 600; color: #e8eaf0; margin: 1.4em 0 0.5em; font-size: 1rem; }
+  .analyse-body h1:first-child, .analyse-body h2:first-child { margin-top: 0; font-size: 1.1rem; }
+  .analyse-body p { color: #8892a4; font-size: 14px; line-height: 1.75; margin-bottom: 0.8em; }
+  .analyse-body strong { color: #c8d0e0; }
+  .analyse-body ul, .analyse-body ol { padding-left: 1.4em; margin-bottom: 0.8em; }
+  .analyse-body li { color: #8892a4; font-size: 14px; line-height: 1.75; }
+  .analyse-body hr { border: none; border-top: 1px solid #1a1f2e; margin: 1.5em 0; }
+
+  /* Search page */
+  .search-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: radial-gradient(ellipse 80% 60% at 50% -10%, #1a0d00 0%, #080b0f 55%); }
+  .search-inner { max-width: 540px; width: 100%; text-align: center; }
+  .search-eyebrow { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #f97316; border: 1px solid #3a1a00; background: #110900; padding: 4px 12px; border-radius: 20px; margin-bottom: 24px; }
+  .search-title { font-family: 'JetBrains Mono', monospace; font-size: clamp(2rem, 6vw, 3rem); font-weight: 700; color: #fff; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 14px; }
+  .search-title span { color: #f97316; }
+  .search-sub { font-size: 15px; color: #555566; line-height: 1.6; margin-bottom: 36px; }
+  .search-row { display: flex; gap: 8px; background: #0d1117; border: 1px solid #1a1f2e; border-radius: 10px; padding: 7px; margin-bottom: 12px; transition: border-color 0.2s; }
+  .search-row:focus-within { border-color: #f97316; }
+  .search-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 600; letter-spacing: 0.04em; padding: 8px 12px; }
+  .search-input::placeholder { color: #2a2f3e; }
+  .search-btn { background: #f97316; color: #fff; border: none; border-radius: 7px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.15s; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+  .search-btn:hover { background: #ea6c0a; }
+  .search-btn:disabled { opacity: 0.5; cursor: default; }
+  .search-error { color: #ef4444; font-size: 13px; margin-top: 8px; }
+  .loading-state { margin-top: 32px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .loading-text { color: #555566; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 40px; }
+  .tag { font-size: 11px; color: #333344; background: #0d1117; border: 1px solid #1a1f2e; padding: 4px 10px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+
+  .spinner { width: 24px; height: 24px; border: 2px solid #1a1f2e; border-top-color: #f97316; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  .spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+
+  @media (max-width: 520px) {
+    .metrics-grid { grid-template-columns: 1fr; }
+    .metric-cell:last-child:nth-child(odd) { grid-column: span 1; }
+  }
+`
+document.head.appendChild(styleEl)
 
 export default function App() {
   const [ticker, setTicker] = useState('')
@@ -45,56 +125,51 @@ export default function App() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setResult(data)
-    } catch (e) {
-      setError('Er ging iets mis. Controleer de ticker en probeer opnieuw.')
+    } catch {
+      setError('Ophalen mislukt. Controleer de ticker en probeer opnieuw.')
     } finally {
       setLoading(false)
     }
   }
 
-  function reset() {
-    setResult(null)
-    setTicker('')
-    setError(null)
-  }
-
-  if (result) return <ResultPage result={result} onReset={reset} />
+  if (result) return <ResultPage result={result} onReset={() => { setResult(null); setTicker('') }} />
 
   return (
-    <div style={styles.page}>
-      <div style={styles.hero}>
-        <div style={styles.badge}>AI-Powered</div>
-        <h1 style={styles.title}>Aandelen<span style={{ color: '#f97316' }}>Analyse</span></h1>
-        <p style={styles.sub}>Voer een ticker in en krijg direct een volledige fundamentele analyse op basis van 7 financiële metrics.</p>
+    <div className="search-page">
+      <div className="search-inner">
+        <span className="search-eyebrow">AI Fundamentele Analyse</span>
+        <h1 className="search-title">Aandelen<span>Analyse</span></h1>
+        <p className="search-sub">Voer een ticker in voor een directe fundamentele analyse op basis van 7 financiële metrics.</p>
 
-        <div style={styles.searchBox}>
+        <div className="search-row">
           <input
-            style={styles.input}
+            className="search-input"
             type="text"
-            placeholder="Bijv. AAPL, MSFT, ADSK..."
+            placeholder="AAPL, MSFT, ORCL..."
             value={ticker}
             onChange={e => setTicker(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && analyseer()}
             disabled={loading}
             autoFocus
           />
-          <button style={styles.btn} onClick={analyseer} disabled={loading || !ticker.trim()}>
-            {loading ? <Spinner /> : 'Analyseer'}
+          <button className="search-btn" onClick={analyseer} disabled={loading || !ticker.trim()}>
+            {loading ? <span className="spinner-sm" /> : null}
+            {loading ? 'Laden...' : 'Analyseer →'}
           </button>
         </div>
 
-        {error && <p style={styles.error}>{error}</p>}
+        {error && <p className="search-error">{error}</p>}
 
         {loading && (
-          <div style={styles.loadingBox}>
-            <Spinner large />
-            <p style={{ color: '#6b6b80', marginTop: 12 }}>Data ophalen en analyseren...</p>
+          <div className="loading-state">
+            <span className="spinner" />
+            <span className="loading-text">Data ophalen via Finnhub · Analyse via Claude...</span>
           </div>
         )}
 
-        <div style={styles.metricLabels}>
-          {METRICS.map(m => (
-            <span key={m.key} style={styles.metricLabel}>{m.label}</span>
+        <div className="tag-row">
+          {['P/E Ratio', 'EPS', 'Debt/Equity', 'ROE', 'Winstmarge', 'Omzetgroei', 'FCF'].map(t => (
+            <span key={t} className="tag">{t}</span>
           ))}
         </div>
       </div>
@@ -106,255 +181,55 @@ function ResultPage({ result, onReset }) {
   const { ticker, analyse, raw_data } = result
 
   return (
-    <div style={styles.resultPage}>
-      <header style={styles.header}>
-        <div>
-          <div style={styles.badge}>Analyse resultaat</div>
-          <h2 style={styles.tickerTitle}>{ticker}</h2>
+    <div className="result-page">
+      <header className="result-header">
+        <div className="ticker-block">
+          <div className="ticker-eyebrow">Fundamentele Analyse</div>
+          <div className="ticker-name">{ticker}</div>
         </div>
-        <button style={styles.backBtn} onClick={onReset}>← Nieuw aandeel</button>
+        <button className="back-btn" onClick={onReset}>← Nieuw aandeel</button>
       </header>
 
-      <div style={styles.grid}>
-        {METRICS.map(m => {
-          const val = raw_data?.[m.key]
-          const color = scoreColor(m.key, val)
-          return (
-            <div key={m.key} style={{ ...styles.card, borderTopColor: color }}>
-              <div style={styles.cardLabel}>{m.label}</div>
-              <div style={{ ...styles.cardValue, color }}>
-                {val !== null && val !== undefined ? `${val}${m.suffix}` : '—'}
+      <div className="metrics-section">
+        <div className="metrics-grid">
+          {METRICS.map(m => {
+            const val = raw_data?.[m.key]
+            const s = m.score(val)
+            const { label, color } = scoreToLabel(s)
+            const displayVal = val !== null && val !== undefined
+              ? `${typeof val === 'number' ? val : val}${m.suffix}`
+              : '—'
+
+            return (
+              <div key={m.key} className="metric-cell">
+                <div className="metric-top">
+                  <span className="metric-label">{m.label}</span>
+                  <span className="metric-badge" style={{ background: color + '22', color }}>
+                    {label}
+                  </span>
+                </div>
+                <div className="metric-value" style={{ color: s !== null ? color : '#555566' }}>
+                  {displayVal}
+                </div>
+                <div className="metric-desc">{m.desc}</div>
+                <div className="score-bar-track">
+                  <div className="score-bar-fill" style={{ width: `${s ?? 0}%`, background: color }} />
+                </div>
               </div>
-              <div style={styles.cardDesc}>{m.desc}</div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
 
-      <div style={styles.analyseBox}>
-        <div style={styles.analyseHeader}>AI Beoordeling</div>
-        <div style={styles.markdown}>
+      <div className="analyse-section">
+        <div className="analyse-header">
+          <span className="analyse-dot" />
+          <span className="analyse-title">AI Beoordeling — {ticker}</span>
+        </div>
+        <div className="analyse-body">
           <ReactMarkdown>{analyse}</ReactMarkdown>
         </div>
       </div>
     </div>
   )
 }
-
-function Spinner({ large }) {
-  return (
-    <div style={{
-      width: large ? 32 : 18,
-      height: large ? 32 : 18,
-      border: `2px solid #333`,
-      borderTop: `2px solid #f97316`,
-      borderRadius: '50%',
-      animation: 'spin 0.7s linear infinite',
-      display: 'inline-block',
-    }} />
-  )
-}
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '2rem',
-    background: 'radial-gradient(ellipse at 50% 0%, #1a0f00 0%, #0a0a0f 60%)',
-  },
-  hero: {
-    maxWidth: 600,
-    width: '100%',
-    textAlign: 'center',
-  },
-  badge: {
-    display: 'inline-block',
-    background: '#1a1010',
-    border: '1px solid #3a1a00',
-    color: '#f97316',
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: '0.12em',
-    textTransform: 'uppercase',
-    padding: '4px 12px',
-    borderRadius: 20,
-    marginBottom: 20,
-  },
-  title: {
-    fontFamily: "'Space Grotesk', sans-serif",
-    fontSize: 'clamp(2rem, 6vw, 3.5rem)',
-    fontWeight: 700,
-    letterSpacing: '-0.02em',
-    lineHeight: 1.1,
-    marginBottom: 16,
-    color: '#e8e8f0',
-  },
-  sub: {
-    color: '#6b6b80',
-    fontSize: 16,
-    lineHeight: 1.6,
-    marginBottom: 36,
-    maxWidth: 480,
-    margin: '0 auto 36px',
-  },
-  searchBox: {
-    display: 'flex',
-    gap: 10,
-    background: '#111118',
-    border: '1px solid #1e1e2e',
-    borderRadius: 12,
-    padding: 8,
-    marginBottom: 16,
-  },
-  input: {
-    flex: 1,
-    background: 'transparent',
-    border: 'none',
-    outline: 'none',
-    color: '#e8e8f0',
-    fontSize: 18,
-    fontFamily: "'Space Grotesk', sans-serif",
-    fontWeight: 600,
-    letterSpacing: '0.05em',
-    padding: '8px 12px',
-  },
-  btn: {
-    background: '#f97316',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    padding: '10px 24px',
-    fontSize: 15,
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'background 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    whiteSpace: 'nowrap',
-  },
-  error: {
-    color: '#ef4444',
-    fontSize: 14,
-    marginTop: 8,
-  },
-  loadingBox: {
-    marginTop: 32,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  metricLabels: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-    marginTop: 40,
-  },
-  metricLabel: {
-    background: '#111118',
-    border: '1px solid #1e1e2e',
-    color: '#6b6b80',
-    fontSize: 11,
-    padding: '4px 10px',
-    borderRadius: 6,
-  },
-  resultPage: {
-    maxWidth: 900,
-    margin: '0 auto',
-    padding: '2rem',
-    minHeight: '100vh',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 32,
-    paddingBottom: 24,
-    borderBottom: '1px solid #1e1e2e',
-  },
-  tickerTitle: {
-    fontFamily: "'Space Grotesk', sans-serif",
-    fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
-    fontWeight: 700,
-    color: '#e8e8f0',
-    marginTop: 8,
-  },
-  backBtn: {
-    background: 'transparent',
-    border: '1px solid #1e1e2e',
-    color: '#6b6b80',
-    padding: '8px 16px',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: 14,
-    transition: 'border-color 0.2s, color 0.2s',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-    gap: 12,
-    marginBottom: 32,
-  },
-  card: {
-    background: '#111118',
-    border: '1px solid #1e1e2e',
-    borderTop: '3px solid',
-    borderRadius: 10,
-    padding: '16px 18px',
-  },
-  cardLabel: {
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    color: '#6b6b80',
-    marginBottom: 8,
-  },
-  cardValue: {
-    fontFamily: "'Space Grotesk', sans-serif",
-    fontSize: 24,
-    fontWeight: 700,
-    marginBottom: 4,
-  },
-  cardDesc: {
-    fontSize: 11,
-    color: '#6b6b80',
-  },
-  analyseBox: {
-    background: '#111118',
-    border: '1px solid #1e1e2e',
-    borderRadius: 12,
-    padding: '28px 32px',
-  },
-  analyseHeader: {
-    fontSize: 12,
-    fontWeight: 600,
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
-    color: '#f97316',
-    marginBottom: 20,
-    paddingBottom: 12,
-    borderBottom: '1px solid #1e1e2e',
-  },
-  markdown: {
-    color: '#c8c8d8',
-    fontSize: 15,
-    lineHeight: 1.8,
-  },
-}
-
-// Spinner keyframe via style tag
-const styleEl = document.createElement('style')
-styleEl.textContent = `
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .markdown h1, .markdown h2, .markdown h3 { color: #e8e8f0; margin: 1.2em 0 0.4em; font-family: 'Space Grotesk', sans-serif; }
-  .markdown p { margin-bottom: 0.8em; }
-  .markdown strong { color: #e8e8f0; }
-  .markdown hr { border: none; border-top: 1px solid #1e1e2e; margin: 1.5em 0; }
-  .markdown ul, .markdown ol { padding-left: 1.4em; margin-bottom: 0.8em; }
-  button:hover { opacity: 0.85; }
-`
-document.head.appendChild(styleEl)
