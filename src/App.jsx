@@ -7,7 +7,7 @@ const METRICS = [
   { key: 'pe_ratio',               label: 'P/E Ratio',       suffix: 'x',  desc: 'Koers gedeeld door winst per aandeel',
     score: v => v === null ? null : v < 15 ? 90 : v < 25 ? 70 : v < 35 ? 50 : v < 50 ? 30 : 15 },
   { key: 'eps',                    label: 'EPS',              suffix: '',   desc: 'Winst per aandeel (TTM)',
-    score: v => v === null ? null : v > 10 ? 90 : v > 5 ? 75 : v > 2 ? 55 : v > 0 ? 35 : 10 },
+    score: v => v === null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
   { key: 'debt_to_equity',         label: 'Debt / Equity',   suffix: 'x',  desc: 'Verhouding schuld tot eigen vermogen',
     score: v => v === null ? null : v < 0.5 ? 90 : v < 1 ? 70 : v < 2 ? 45 : v < 4 ? 25 : 10 },
   { key: 'roe_percent',            label: 'ROE',             suffix: '%',  desc: 'Rendement op eigen vermogen',
@@ -16,8 +16,8 @@ const METRICS = [
     score: v => v === null ? null : v > 25 ? 90 : v > 15 ? 75 : v > 8 ? 55 : v > 0 ? 35 : 10 },
   { key: 'revenue_growth_percent', label: 'Omzetgroei',      suffix: '%',  desc: 'Jaar-op-jaar omzetgroei',
     score: v => v === null ? null : v > 20 ? 90 : v > 10 ? 75 : v > 5 ? 55 : v > 0 ? 35 : 10 },
-  { key: 'free_cash_flow_per_share',label: 'FCF / Aandeel',  suffix: '',   desc: 'Vrije kasstroom per aandeel',
-    score: v => v === null ? null : v > 10 ? 90 : v > 5 ? 75 : v > 2 ? 55 : v > 0 ? 35 : 10 },
+  { key: 'free_cash_flow_billions', label: 'Free Cash Flow', suffix: 'B',  desc: 'Vrije kasstroom (TTM, miljarden USD)',
+    score: v => v === null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
 ]
 
 function scoreToLabel(s) {
