@@ -418,10 +418,17 @@ function AnalyseSectie({ ticker, analyse }) {
           </div>
         )}
 
-        {/* Fallback: als parsing mislukt, toon ruwe analyse */}
+        {/* Fallback: als parsing mislukt toon gestylde ruwe analyse */}
         {!parsed.samenvatting && !parsed.sterkePunten?.length && !parsed.vooruitzichten && !conclusieTekst && (
-          <div style={{padding:'24px 28px'}}>
-            <ReactMarkdown>{analyse}</ReactMarkdown>
+          <div style={{padding:'28px', color:'#8892a4', fontSize:'14px', lineHeight:'1.85'}}>
+            <ReactMarkdown components={{
+              h2: ({children}) => <div style={{fontSize:'10px',fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#555566',marginTop:'1.8em',marginBottom:'0.8em',paddingBottom:'8px',borderBottom:'1px solid #131820'}}>{children}</div>,
+              h3: ({children}) => <div style={{fontSize:'13px',fontWeight:600,color:'#c8d0e0',marginTop:'1.2em',marginBottom:'0.4em'}}>{children}</div>,
+              strong: ({children}) => <strong style={{color:'#c8d0e0',fontWeight:600}}>{children}</strong>,
+              p: ({children}) => <p style={{color:'#8892a4',marginBottom:'0.8em'}}>{children}</p>,
+              ul: ({children}) => <ul style={{listStyle:'none',padding:0,margin:'0 0 0.8em'}}>{children}</ul>,
+              li: ({children}) => <li style={{display:'flex',gap:'10px',marginBottom:'6px',color:'#8892a4'}}><span style={{color:'#333344',flexShrink:0}}>—</span><span>{children}</span></li>,
+            }}>{analyse}</ReactMarkdown>
           </div>
         )}
       </div>
