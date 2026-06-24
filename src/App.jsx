@@ -93,7 +93,7 @@ styleEl.textContent = `
   /* Markt sectie */
   .market-section { margin-bottom: 2rem; }
   .section-title { font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: #555566; margin-bottom: 12px; }
-  .market-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #1a1f2e; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
+  .market-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #1a1f2e; border: 1px solid #1a1f2e; border-radius: 10px; overflow: hidden; }
   .market-cell { background: #0d1117; padding: 14px 16px; }
   .market-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #555566; margin-bottom: 6px; }
   .market-value { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: #e8eaf0; }
@@ -299,12 +299,7 @@ function ResultPage({ result, onReset }) {
             <div className="market-value" style={{ color: d?.dividend_yield_percent > 0 ? '#22c55e' : '#555566' }}>
               {d?.dividend_yield_percent > 0 ? `${d.dividend_yield_percent}%` : 'Geen dividend'}
             </div>
-            <div className="market-sub">TTM yield</div>
-          </div>
-          <div className="market-cell">
-            <div className="market-label">Price / Book</div>
-            <div className="market-value">{d?.price_to_book != null ? `${d.price_to_book}x` : '—'}</div>
-            <div className="market-sub">Koers / boekwaarde</div>
+            <div className="market-sub">Indicated annual yield</div>
           </div>
         </div>
 
