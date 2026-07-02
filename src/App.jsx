@@ -260,18 +260,26 @@ document.head.appendChild(S)
 
 function BandBar({ m, val }) {
   const colors = m.lager_is_beter ? [...ZONE_COLORS].reverse() : ZONE_COLORS
+  const range = m.range
+  const zones = m.zones
+
   if (val == null) return (
     <div className="bcon">
-      <div className="btrack">{ZONE_COLORS.map((c,i) => <div key={i} className="bzone" style={{background:c}} />)}</div>
-      <div className="blbls">{m.bandLabels.map((l,i) => <span key={i} className="blbl">{l}</span>)}</div>
+      <div className="btrack">{colors.map((c,i) => <div key={i} className="bzone" style={{background:c,flex:1}} />)}</div>
+      <div style={{display:'flex',marginTop:4}}>
+        {m.bandLabels.map((l,i) => {
+          const zb = zones.map(z => ztp(z, range))
+          const ws = [zb[0], zb[1]-zb[0], zb[2]-zb[1], zb[3]-zb[2], 100-zb[3]]
+          return <span key={i} style={{flex:`0 0 ${ws[i]}%`,fontSize:9,color:'#252d40',fontFamily:'JetBrains Mono,monospace',textAlign:'center',overflow:'hidden'}}>{l}</span>
+        })}
+      </div>
     </div>
   )
-  const pos = vtp(val, m.range)
-  const zb = m.zones.map(z => ztp(z, m.range))
+
+  const pos = vtp(val, range)
+  const zb = zones.map(z => ztp(z, range))
   const ws = [zb[0], zb[1]-zb[0], zb[2]-zb[1], zb[3]-zb[2], 100-zb[3]]
 
-  // Bepaal activeZone puur op basis van waar de marker (pos) valt in de balk
-  // Zones zijn: 0=eerste, 1=tweede, etc. — grenzen zijn zb[0], zb[1], zb[2], zb[3]
   let az = 0
   if (pos >= zb[3]) az = 4
   else if (pos >= zb[2]) az = 3
@@ -287,8 +295,18 @@ function BandBar({ m, val }) {
       <div className="bpin" style={{left:`${pos}%`}}>
         <div className="bpinbar" style={{background:colors[az]}} />
       </div>
-      <div className="blbls">
-        {m.bandLabels.map((l,i) => <span key={i} className={`blbl${i===az?' on':''}`}>{l}</span>)}
+      <div style={{display:'flex',marginTop:4}}>
+        {m.bandLabels.map((l,i) => (
+          <span key={i} style={{
+            flex:`0 0 ${ws[i]}%`,
+            fontSize:9,
+            color: i===az ? colors[az] : '#252d40',
+            fontFamily:'JetBrains Mono,monospace',
+            textAlign:'center',
+            overflow:'hidden',
+            fontWeight: i===az ? 600 : 400,
+          }}>{l}</span>
+        ))}
       </div>
     </div>
   )
@@ -702,10 +720,11 @@ function ResultPage({ result, onReset }) {
             const peConfig = m.key === 'pe_ratio' ? getPeConfig(sector) : null
             const metricOverride = peConfig ? {
               ...m,
+              lager_is_beter: true,
               range: [peConfig.zones[0] - 5, peConfig.zones[3] + 15],
               zones: peConfig.zones,
               bandLabels: peConfig.labels,
-              score: v => v == null ? null : v < 0 ? 5 : v < peConfig.zones[0] ? 90 : v < peConfig.zones[1] ? 80 : v < peConfig.zones[2] ? 65 : v < peConfig.zones[3] ? 40 : 20
+              score: v => v == null ? null : v < 0 ? 5 : v < peConfig.zones[1] ? 85 : v < peConfig.zones[2] ? 65 : v < peConfig.zones[3] ? 40 : 20
             } : m
             const s = metricOverride.score(val)
             const { label, color } = scoreToLabel(s)
