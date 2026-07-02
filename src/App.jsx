@@ -339,7 +339,7 @@ function berekenKoopscore(analyse, fundamenteleScore) {
   return parseFloat((fs * 0.50 + ws * 0.25 + ts * 0.25).toFixed(1))
 }
 
-function AIBlok({ ticker, analyse, fundamenteleScore }) {
+function AIBlok({ ticker, analyse, fundamenteleScore, currentPrice }) {
   if (!analyse) return null
   if (typeof analyse === 'string') {
     return (
@@ -436,7 +436,7 @@ function AIBlok({ ticker, analyse, fundamenteleScore }) {
             <span className="khdr-icon">💡</span>
             <span className="khdr-title">Koopadvies</span>
           </div>
-          {analyse.richtprijs != null && d?.current_price != null && analyse.richtprijs < d.current_price && (
+          {analyse.richtprijs != null && analyse.richtprijs < (currentPrice ?? Infinity) && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '10px',
               background: '#1a0f00', border: '1px solid #3a1800',
@@ -749,7 +749,7 @@ function ResultPage({ result, onReset }) {
       <ExtraInfoBalk d={{...d, ticker, peer_pe: d?.sector_peers}} />
 
       {/* AI */}
-      <AIBlok ticker={ticker} analyse={analyse} fundamenteleScore={d?.fundamentele_score} />
+      <AIBlok ticker={ticker} analyse={analyse} fundamenteleScore={d?.fundamentele_score} currentPrice={d?.current_price} />
     </div>
   )
 }
