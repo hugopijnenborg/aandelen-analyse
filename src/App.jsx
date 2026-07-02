@@ -688,7 +688,7 @@ function ResultPage({ result, onReset }) {
       </div>
 
       {/* Extra info */}
-      <ExtraInfoBalk d={{...d, ticker, peer_pe: analyse?.peer_pe}} />
+      <ExtraInfoBalk d={{...d, ticker, peer_pe: d?.sector_peers}} />
 
       {/* AI */}
       <AIBlok ticker={ticker} analyse={analyse} fundamenteleScore={d?.fundamentele_score} />
