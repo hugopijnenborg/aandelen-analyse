@@ -290,7 +290,7 @@ function berekenKoopscore(analyse, fundamenteleScore) {
   const ws = analyse.waardering_score != null ? Number(analyse.waardering_score) : null
   const ts = analyse.timing_score != null ? Number(analyse.timing_score) : null
   if (fs == null || ws == null || ts == null) return analyse.koopscore != null ? Number(analyse.koopscore) : null
-  return parseFloat((fs * 0.35 + ws * 0.40 + ts * 0.25).toFixed(1))
+  return parseFloat((fs * 0.50 + ws * 0.25 + ts * 0.25).toFixed(1))
 }
 
 function AIBlok({ ticker, analyse, fundamenteleScore }) {
