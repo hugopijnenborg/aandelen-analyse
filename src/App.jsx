@@ -454,6 +454,7 @@ function ExtraInfoBalk({ d }) {
   const ins = d?.insider
   const ana = d?.analyst
   const earn = d?.earnings
+  const peers = d?.sector_peers ?? []
 
   const insSignalClr = ins?.signal === 'KOOP' ? '#22c55e' : ins?.signal === 'VERKOOP' ? '#ef4444' : '#eab308'
   const insSignalBg = ins?.signal === 'KOOP' ? '#22c55e18' : ins?.signal === 'VERKOOP' ? '#ef444418' : '#eab30818'
@@ -476,33 +477,51 @@ function ExtraInfoBalk({ d }) {
 
         {/* Insider trading */}
         <div className="xcell">
-          <div className="xlbl"><span className="xlbl-icon">👤</span>Insider Trading</div>
+          <div className="xlbl"><span className="xlbl-icon">👤</span>Wat doen insiders?</div>
+          <div style={{fontSize:11,color:'#444d62',marginBottom:10,lineHeight:1.5}}>
+            Kopen of verkopen CEO/CFO en andere bestuurders hun eigen aandelen? Aankopen zijn een sterk positief signaal.
+          </div>
           {ins ? (
             <>
               <div className="ins-signal" style={{background: insSignalBg, color: insSignalClr}}>
                 {ins.signal === 'KOOP' ? '↑' : ins.signal === 'VERKOOP' ? '↓' : '—'} {ins.signal}
               </div>
-              <div className="xsub">{ins.buys} aankopen · {ins.sells} verkopen</div>
-              <div className="xsub2">Laatste 6 maanden</div>
+              <div className="xsub" style={{marginTop:6}}>{ins.buys} aankopen · {ins.sells} verkopen (6 mnd)</div>
+              {ins.recent?.length > 0 && (
+                <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:4}}>
+                  {ins.recent.map((t, i) => (
+                    <div key={i} style={{fontSize:11,color:'#555f7a',display:'flex',justifyContent:'space-between'}}>
+                      <span>{t.name?.split(' ').slice(-1)[0]}{t.title ? ` · ${t.title}` : ''}</span>
+                      <span style={{color: t.change > 0 ? '#22c55e' : '#ef4444', fontFamily:'JetBrains Mono,monospace'}}>
+                        {t.change > 0 ? '+' : ''}{t.change?.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : <div className="xsub">Geen data</div>}
         </div>
 
         {/* Analyst consensus */}
         <div className="xcell">
-          <div className="xlbl"><span className="xlbl-icon">📊</span>Analyst Consensus</div>
+          <div className="xlbl"><span className="xlbl-icon">📊</span>Wat adviseren analisten?</div>
+          <div style={{fontSize:11,color:'#444d62',marginBottom:10,lineHeight:1.5}}>
+            Analisten van banken als Goldman Sachs en JPMorgan beoordelen het aandeel. Dit is hun gemiddeld advies.
+          </div>
           {ana && anaTotal > 0 ? (
             <>
-              <div className="xval" style={{color: anaLabelClr}}>{anaLabel}</div>
+              <div className="xval" style={{color: anaLabelClr, marginBottom:6}}>{anaLabel}</div>
+              <div style={{fontSize:12,color:'#666f88',marginBottom:6}}>{anaTotal} analisten beoordeeld</div>
               <div className="abar">
                 <div className="abar-seg" style={{width:`${anaBuyPct}%`, background:'#22c55e'}} />
                 <div className="abar-seg" style={{width:`${anaHoldPct}%`, background:'#eab308'}} />
                 <div className="abar-seg" style={{width:`${anaSellPct}%`, background:'#ef4444'}} />
               </div>
               <div className="abar-lbls">
-                <span style={{color:'#22c55e'}}>{ana.strong_buy + ana.buy} koop</span>
-                <span style={{color:'#eab308'}}>{ana.hold} houd</span>
-                <span style={{color:'#ef4444'}}>{ana.sell + ana.strong_sell} verkoop</span>
+                <span style={{color:'#22c55e'}}>{Math.round(anaBuyPct)}% koop</span>
+                <span style={{color:'#eab308'}}>{Math.round(anaHoldPct)}% houd</span>
+                <span style={{color:'#ef4444'}}>{Math.round(anaSellPct)}% verkoop</span>
               </div>
             </>
           ) : <div className="xsub">Geen data</div>}
@@ -510,33 +529,71 @@ function ExtraInfoBalk({ d }) {
 
         {/* Earnings */}
         <div className="xcell">
-          <div className="xlbl"><span className="xlbl-icon">📅</span>Volgende Earnings</div>
+          <div className="xlbl"><span className="xlbl-icon">📅</span>Volgende kwartaalcijfers</div>
+          <div style={{fontSize:11,color:'#444d62',marginBottom:10,lineHeight:1.5}}>
+            Elk kwartaal publiceert het bedrijf zijn resultaten. Dit zorgt vaak voor grote koersbewegingen.
+          </div>
           {earn ? (
             <>
-              <div className="earn-days" style={{color: earnClr}}>{earn.days_until}d</div>
-              <div className="xsub">{earn.date}</div>
+              <div className="earn-days" style={{color: earnClr}}>{earn.days_until} dagen</div>
+              <div className="xsub" style={{marginTop:4}}>{earn.date}</div>
               {earn.eps_estimate != null && (
-                <div className="xsub2">EPS est. ${earn.eps_estimate}</div>
+                <div style={{fontSize:11,color:'#444d62',marginTop:6}}>
+                  Verwachte winst per aandeel: <span style={{color:'#888',fontFamily:'JetBrains Mono,monospace'}}>${earn.eps_estimate}</span>
+                </div>
+              )}
+              {earn.days_until <= 14 && (
+                <div style={{fontSize:11,color:'#f97316',marginTop:6}}>⚠️ Earnings binnen 2 weken — verhoogd risico</div>
               )}
             </>
           ) : <div className="xsub">Geen datum bekend</div>}
         </div>
 
-        {/* Sector peers */}
+        {/* Sector vergelijking */}
         <div className="xcell">
-          <div className="xlbl"><span className="xlbl-icon">🏭</span>Sector Peers</div>
-          {d?.sector_peers?.length > 0 ? (
-            <div style={{display:'flex',flexWrap:'wrap',gap:'4px',marginTop:'2px'}}>
-              {d.sector_peers.slice(0,5).map(p => (
-                <span key={p} style={{
-                  background:'#151c2a',border:'1px solid #1e2a3a',
-                  borderRadius:'3px',padding:'2px 7px',
-                  fontSize:'11px',color:'#555f7a',
-                  fontFamily:'JetBrains Mono,monospace'
-                }}>{p}</span>
+          <div className="xlbl"><span className="xlbl-icon">🏭</span>Sectorvergelijking P/E</div>
+          <div style={{fontSize:11,color:'#444d62',marginBottom:10,lineHeight:1.5}}>
+            Hoe duur is dit aandeel vergeleken met concurrenten? Een lagere P/E kan goedkoper zijn.
+          </div>
+          {d?.peer_pe?.length > 0 ? (
+            <div style={{display:'flex',flexDirection:'column',gap:5}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'4px 0',borderBottom:'1px solid #1a2235'}}>
+                <span style={{fontSize:12,fontWeight:700,color:'#f97316',fontFamily:'JetBrains Mono,monospace'}}>{d?.ticker}</span>
+                <span style={{fontSize:13,fontFamily:'JetBrains Mono,monospace',color:'#f97316',fontWeight:700}}>
+                  {d?.pe_ratio != null ? `${d.pe_ratio}x` : '—'}
+                </span>
+              </div>
+              {d.peer_pe.map(p => {
+                const isLower = p.pe != null && d?.pe_ratio != null && p.pe < d.pe_ratio
+                const isHigher = p.pe != null && d?.pe_ratio != null && p.pe > d.pe_ratio
+                return (
+                  <div key={p.ticker} style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontSize:12,color:'#666f88'}}>{p.naam || p.ticker}</span>
+                    <span style={{
+                      fontSize:12,fontFamily:'JetBrains Mono,monospace',
+                      color: isLower ? '#ef4444' : isHigher ? '#22c55e' : '#444d62'
+                    }}>
+                      {p.pe != null ? `${p.pe}x` : '—'}
+                    </span>
+                  </div>
+                )
+              })}
+              <div style={{fontSize:10,color:'#333d52',marginTop:4}}>Groen = duurder dan {d?.ticker} · Rood = goedkoper</div>
+            </div>
+          ) : peers.length > 0 ? (
+            <div style={{display:'flex',flexDirection:'column',gap:5}}>
+              <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:'1px solid #1a2235'}}>
+                <span style={{fontSize:12,fontWeight:700,color:'#f97316',fontFamily:'JetBrains Mono,monospace'}}>{d?.ticker}</span>
+                <span style={{fontSize:13,fontFamily:'JetBrains Mono,monospace',color:'#f97316'}}>{d?.pe_ratio != null ? `${d.pe_ratio}x` : '—'}</span>
+              </div>
+              {peers.map(p => (
+                <div key={p.ticker || p} style={{display:'flex',justifyContent:'space-between'}}>
+                  <span style={{fontSize:12,color:'#666f88',fontFamily:'JetBrains Mono,monospace'}}>{p.ticker || p}</span>
+                  <span style={{fontSize:12,color:'#333d52'}}>—</span>
+                </div>
               ))}
             </div>
-          ) : <div className="xsub">Geen data</div>}
+          ) : <div className="xsub">Geen sectordata</div>}
         </div>
 
       </div>
@@ -626,7 +683,7 @@ function ResultPage({ result, onReset }) {
       </div>
 
       {/* Extra info */}
-      <ExtraInfoBalk d={d} />
+      <ExtraInfoBalk d={{...d, ticker, peer_pe: analyse?.peer_pe}} />
 
       {/* AI */}
       <AIBlok ticker={ticker} analyse={analyse} />
