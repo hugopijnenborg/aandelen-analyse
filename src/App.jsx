@@ -721,7 +721,7 @@ function ResultPage({ result, onReset }) {
             const metricOverride = peConfig ? {
               ...m,
               lager_is_beter: false, // eigen kleurlogica hieronder
-              _sectorColors: ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'], // laag=goed, midden=gezond, hoog=duur
+              _sectorColors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'], // laag=groen, gezond=groen, hoog=geel, duur=oranje, erg duur=rood
               range: [peConfig.zones[0] - 5, peConfig.zones[3] + 15],
               zones: peConfig.zones,
               bandLabels: peConfig.labels,
