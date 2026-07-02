@@ -50,6 +50,34 @@ const METRICS = [
     score: v => v == null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
 ]
 
+const SECTOR_PE_RANGES = {
+  'SaaS':              { zones: [10, 20, 35, 50], labels: ['< 10', '10–20', '20–35', '35–50', '> 50'] },
+  'AI Software':       { zones: [12, 25, 40, 60], labels: ['< 12', '12–25', '25–40', '40–60', '> 60'] },
+  'AI Infrastructuur': { zones: [10, 20, 35, 45], labels: ['< 10', '10–20', '20–35', '35–45', '> 45'] },
+  'Semiconductors':    { zones: [8,  18, 30, 40],  labels: ['< 8',  '8–18',  '18–30', '30–40', '> 40'] },
+  'Cybersecurity':     { zones: [12, 25, 40, 55], labels: ['< 12', '12–25', '25–40', '40–55', '> 55'] },
+  'Cloud':             { zones: [10, 20, 35, 45], labels: ['< 10', '10–20', '20–35', '35–45', '> 45'] },
+  'Datacenters':       { zones: [10, 20, 30, 40], labels: ['< 10', '10–20', '20–30', '30–40', '> 40'] },
+  'Financials':        { zones: [5,  10, 18, 25],  labels: ['< 5',  '5–10',  '10–18', '18–25', '> 25'] },
+  'Industrials':       { zones: [8,  15, 25, 35],  labels: ['< 8',  '8–15',  '15–25', '25–35', '> 35'] },
+  'Energy':            { zones: [5,  8,  15, 20],  labels: ['< 5',  '5–8',   '8–15',  '15–20', '> 20'] },
+  'Utilities':         { zones: [8,  12, 20, 28],  labels: ['< 8',  '8–12',  '12–20', '20–28', '> 28'] },
+  'Consumer':          { zones: [8,  15, 25, 35],  labels: ['< 8',  '8–15',  '15–25', '25–35', '> 35'] },
+  'Healthcare':        { zones: [8,  12, 25, 35],  labels: ['< 8',  '8–12',  '12–25', '25–35', '> 35'] },
+  'Pharma':            { zones: [6,  12, 20, 30],  labels: ['< 6',  '6–12',  '12–20', '20–30', '> 30'] },
+  'Biotech':           { zones: [0,  15, 25, 35],  labels: ['Verlies', '< 15', '15–25', '25–35', '> 35'] },
+}
+
+function getPeConfig(sector) {
+  if (!sector) return null
+  for (const [key, config] of Object.entries(SECTOR_PE_RANGES)) {
+    if (sector.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(sector.toLowerCase())) {
+      return config
+    }
+  }
+  return null
+}
+
 const ZONE_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']
 
 const OORDEEL = {
@@ -669,7 +697,17 @@ function ResultPage({ result, onReset }) {
         <div className="mgrid">
           {METRICS.map(m => {
             const val = d?.[m.key]
-            const s = m.score(val)
+            // Gebruik sectorspecifieke P/E config als beschikbaar
+            const sector = analyse?.sector
+            const peConfig = m.key === 'pe_ratio' ? getPeConfig(sector) : null
+            const metricOverride = peConfig ? {
+              ...m,
+              range: [peConfig.zones[0] - 5, peConfig.zones[3] + 15],
+              zones: peConfig.zones,
+              bandLabels: peConfig.labels,
+              score: v => v == null ? null : v < 0 ? 5 : v < peConfig.zones[0] ? 90 : v < peConfig.zones[1] ? 80 : v < peConfig.zones[2] ? 65 : v < peConfig.zones[3] ? 40 : 20
+            } : m
+            const s = metricOverride.score(val)
             const { label, color } = scoreToLabel(s)
             const dv = val != null ? (m.format ? m.format(val) : `${val}${m.suffix}`) : '—'
             return (
@@ -679,8 +717,8 @@ function ResultPage({ result, onReset }) {
                   <span className="mbadge" style={{background:color+'20',color}}>{label}</span>
                 </div>
                 <div className="mval" style={{color: s != null ? color : '#2a3044'}}>{dv}</div>
-                <div className="mdesc">{m.desc}</div>
-                <BandBar m={m} val={val} />
+                <div className="mdesc">{m.desc}{peConfig && sector ? ` · ${sector} sector` : ''}</div>
+                <BandBar m={metricOverride} val={val} />
               </div>
             )
           })}
