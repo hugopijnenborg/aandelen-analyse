@@ -564,21 +564,20 @@ function ExtraInfoBalk({ d }) {
                 </span>
               </div>
               {d.peer_pe.map(p => {
-                const isLower = p.pe != null && d?.pe_ratio != null && p.pe < d.pe_ratio
                 const isHigher = p.pe != null && d?.pe_ratio != null && p.pe > d.pe_ratio
                 return (
                   <div key={p.ticker} style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                     <span style={{fontSize:12,color:'#666f88'}}>{p.naam || p.ticker}</span>
                     <span style={{
                       fontSize:12,fontFamily:'JetBrains Mono,monospace',
-                      color: isLower ? '#ef4444' : isHigher ? '#22c55e' : '#444d62'
+                      color: p.pe == null ? '#333d52' : isHigher ? '#ef4444' : '#22c55e'
                     }}>
                       {p.pe != null ? `${p.pe}x` : '—'}
                     </span>
                   </div>
                 )
               })}
-              <div style={{fontSize:10,color:'#333d52',marginTop:4}}>Groen = duurder dan {d?.ticker} · Rood = goedkoper</div>
+              <div style={{fontSize:10,color:'#333d52',marginTop:4}}>Groen = concurrent duurder · Rood = concurrent goedkoper dan {d?.ticker}</div>
             </div>
           ) : peers.length > 0 ? (
             <div style={{display:'flex',flexDirection:'column',gap:5}}>
