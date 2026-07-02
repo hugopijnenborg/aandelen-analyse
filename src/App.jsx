@@ -51,21 +51,21 @@ const METRICS = [
 ]
 
 const SECTOR_PE_RANGES = {
-  'SaaS':              { zones: [10, 20, 35, 50], labels: ['< 10', '10–20', '20–35', '35–50', '> 50'] },
-  'AI Software':       { zones: [12, 25, 40, 60], labels: ['< 12', '12–25', '25–40', '40–60', '> 60'] },
-  'AI Infrastructuur': { zones: [10, 20, 35, 45], labels: ['< 10', '10–20', '20–35', '35–45', '> 45'] },
-  'Semiconductors':    { zones: [8,  18, 30, 40],  labels: ['< 8',  '8–18',  '18–30', '30–40', '> 40'] },
-  'Cybersecurity':     { zones: [12, 25, 40, 55], labels: ['< 12', '12–25', '25–40', '40–55', '> 55'] },
-  'Cloud':             { zones: [10, 20, 35, 45], labels: ['< 10', '10–20', '20–35', '35–45', '> 45'] },
-  'Datacenters':       { zones: [10, 20, 30, 40], labels: ['< 10', '10–20', '20–30', '30–40', '> 40'] },
-  'Financials':        { zones: [5,  10, 18, 25],  labels: ['< 5',  '5–10',  '10–18', '18–25', '> 25'] },
-  'Industrials':       { zones: [8,  15, 25, 35],  labels: ['< 8',  '8–15',  '15–25', '25–35', '> 35'] },
-  'Energy':            { zones: [5,  8,  15, 20],  labels: ['< 5',  '5–8',   '8–15',  '15–20', '> 20'] },
-  'Utilities':         { zones: [8,  12, 20, 28],  labels: ['< 8',  '8–12',  '12–20', '20–28', '> 28'] },
-  'Consumer':          { zones: [8,  15, 25, 35],  labels: ['< 8',  '8–15',  '15–25', '25–35', '> 35'] },
-  'Healthcare':        { zones: [8,  12, 25, 35],  labels: ['< 8',  '8–12',  '12–25', '25–35', '> 35'] },
-  'Pharma':            { zones: [6,  12, 20, 30],  labels: ['< 6',  '6–12',  '12–20', '20–30', '> 30'] },
-  'Biotech':           { zones: [0,  15, 25, 35],  labels: ['Verlies', '< 15', '15–25', '25–35', '> 35'] },
+  'SaaS':              { zones: [10, 20, 35, 50], labels: ['< 10', '10–20', '20–35', '35–50', '> 50'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'AI Software':       { zones: [10, 25, 40, 55], labels: ['< 10', '10–25', '25–40', '40–55', '> 55'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'AI Infrastructuur': { zones: [10, 20, 35, 45], labels: ['< 10', '10–20', '20–35', '35–45', '> 45'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Semiconductors':    { zones: [8,  18, 30, 40],  labels: ['< 8',  '8–18',  '18–30', '30–40', '> 40'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Cybersecurity':     { zones: [12, 25, 40, 55], labels: ['< 12', '12–25', '25–40', '40–55', '> 55'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Cloud':             { zones: [10, 20, 35, 45], labels: ['< 10', '10–20', '20–35', '35–45', '> 45'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Datacenters':       { zones: [10, 20, 30, 40], labels: ['< 10', '10–20', '20–30', '30–40', '> 40'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Financials':        { zones: [5,  10, 18, 25],  labels: ['< 5',  '5–10',  '10–18', '18–25', '> 25'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Industrials':       { zones: [8,  15, 25, 35],  labels: ['< 8',  '8–15',  '15–25', '25–35', '> 35'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Energy':            { zones: [5,  8,  15, 20],  labels: ['< 5',  '5–8',   '8–15',  '15–20', '> 20'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Utilities':         { zones: [8,  12, 20, 28],  labels: ['< 8',  '8–12',  '12–20', '20–28', '> 28'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Consumer':          { zones: [8,  15, 25, 35],  labels: ['< 8',  '8–15',  '15–25', '25–35', '> 35'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Healthcare':        { zones: [8,  12, 25, 35],  labels: ['< 8',  '8–12',  '12–25', '25–35', '> 35'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Pharma':            { zones: [6,  12, 20, 30],  labels: ['< 6',  '6–12',  '12–20', '20–30', '> 30'], colors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'] },
+  'Biotech':           { zones: [0,  15, 25, 40],  labels: ['Verlies', '< 15', '15–25', '25–40', '> 40'], colors: ['#ef4444', '#22c55e', '#22c55e', '#eab308', '#ef4444'] },
 }
 
 function getPeConfig(sector) {
@@ -720,8 +720,8 @@ function ResultPage({ result, onReset }) {
             const peConfig = m.key === 'pe_ratio' ? getPeConfig(sector) : null
             const metricOverride = peConfig ? {
               ...m,
-              lager_is_beter: false, // eigen kleurlogica hieronder
-              _sectorColors: ['#22c55e', '#22c55e', '#eab308', '#f97316', '#ef4444'], // laag=groen, gezond=groen, hoog=geel, duur=oranje, erg duur=rood
+              lager_is_beter: false,
+              _sectorColors: peConfig.colors,
               range: [peConfig.zones[0] - 5, peConfig.zones[3] + 15],
               zones: peConfig.zones,
               bandLabels: peConfig.labels,
