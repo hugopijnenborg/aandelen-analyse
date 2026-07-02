@@ -209,7 +209,24 @@ body{background:#080b0f;color:#d4d8e0;font-family:'Inter',sans-serif}
 .spinnersm{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 .warn{background:#1a0f00;border:1px solid #f97316;border-radius:8px;padding:12px 16px;margin-bottom:24px;color:#f97316;font-size:13px}
 
-@media(max-width:640px){.mgrid{grid-template-columns:1fr}.mktgrid{grid-template-columns:1fr 1fr}.punten{grid-template-columns:1fr}.eobanner{flex-wrap:wrap}}
+/* Extra info */
+.xsec{margin-bottom:2rem}
+.xgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#151c2a;border:1px solid #151c2a;border-radius:10px;overflow:hidden}
+.xcell{background:#0a0e16;padding:16px 18px}
+.xlbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#333d52;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.xlbl-icon{font-size:.85rem}
+.xval{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;margin-bottom:3px}
+.xsub{font-size:11px;color:#333d52}
+.xsub2{font-size:11px;color:#444d62;margin-top:2px}
+/* Analyst bar */
+.abar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:8px 0 4px;gap:1px}
+.abar-seg{height:100%;transition:width .3s}
+.abar-lbls{display:flex;justify-content:space-between;font-size:9px;font-family:'JetBrains Mono',monospace}
+/* Insider signal */
+.ins-signal{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.08em;margin-bottom:6px}
+/* Earnings countdown */
+.earn-days{font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;line-height:1;margin-bottom:3px}
+@media(max-width:640px){.mgrid{grid-template-columns:1fr}.mktgrid{grid-template-columns:1fr 1fr}.punten{grid-template-columns:1fr}.eobanner{flex-wrap:wrap}.xgrid{grid-template-columns:1fr 1fr}}
 `
 document.head.appendChild(S)
 
@@ -433,6 +450,100 @@ export default function App() {
   )
 }
 
+function ExtraInfoBalk({ d }) {
+  const ins = d?.insider
+  const ana = d?.analyst
+  const earn = d?.earnings
+
+  const insSignalClr = ins?.signal === 'KOOP' ? '#22c55e' : ins?.signal === 'VERKOOP' ? '#ef4444' : '#eab308'
+  const insSignalBg = ins?.signal === 'KOOP' ? '#22c55e18' : ins?.signal === 'VERKOOP' ? '#ef444418' : '#eab30818'
+
+  const anaTotal = ana ? (ana.strong_buy + ana.buy + ana.hold + ana.sell + ana.strong_sell) : 0
+  const anaBuyPct = anaTotal > 0 ? ((ana.strong_buy + ana.buy) / anaTotal * 100) : 0
+  const anaHoldPct = anaTotal > 0 ? (ana.hold / anaTotal * 100) : 0
+  const anaSellPct = anaTotal > 0 ? ((ana.sell + ana.strong_sell) / anaTotal * 100) : 0
+  const anaLabel = anaBuyPct > 60 ? 'KOOP' : anaSellPct > 40 ? 'VERKOOP' : 'HOUD'
+  const anaLabelClr = anaBuyPct > 60 ? '#22c55e' : anaSellPct > 40 ? '#ef4444' : '#eab308'
+
+  const earnClr = earn?.days_until != null
+    ? earn.days_until <= 14 ? '#f97316' : earn.days_until <= 30 ? '#eab308' : '#22c55e'
+    : '#333d52'
+
+  return (
+    <div className="xsec">
+      <div className="stitle">Marktcontext</div>
+      <div className="xgrid">
+
+        {/* Insider trading */}
+        <div className="xcell">
+          <div className="xlbl"><span className="xlbl-icon">👤</span>Insider Trading</div>
+          {ins ? (
+            <>
+              <div className="ins-signal" style={{background: insSignalBg, color: insSignalClr}}>
+                {ins.signal === 'KOOP' ? '↑' : ins.signal === 'VERKOOP' ? '↓' : '—'} {ins.signal}
+              </div>
+              <div className="xsub">{ins.buys} aankopen · {ins.sells} verkopen</div>
+              <div className="xsub2">Laatste 6 maanden</div>
+            </>
+          ) : <div className="xsub">Geen data</div>}
+        </div>
+
+        {/* Analyst consensus */}
+        <div className="xcell">
+          <div className="xlbl"><span className="xlbl-icon">📊</span>Analyst Consensus</div>
+          {ana && anaTotal > 0 ? (
+            <>
+              <div className="xval" style={{color: anaLabelClr}}>{anaLabel}</div>
+              <div className="abar">
+                <div className="abar-seg" style={{width:`${anaBuyPct}%`, background:'#22c55e'}} />
+                <div className="abar-seg" style={{width:`${anaHoldPct}%`, background:'#eab308'}} />
+                <div className="abar-seg" style={{width:`${anaSellPct}%`, background:'#ef4444'}} />
+              </div>
+              <div className="abar-lbls">
+                <span style={{color:'#22c55e'}}>{ana.strong_buy + ana.buy} koop</span>
+                <span style={{color:'#eab308'}}>{ana.hold} houd</span>
+                <span style={{color:'#ef4444'}}>{ana.sell + ana.strong_sell} verkoop</span>
+              </div>
+            </>
+          ) : <div className="xsub">Geen data</div>}
+        </div>
+
+        {/* Earnings */}
+        <div className="xcell">
+          <div className="xlbl"><span className="xlbl-icon">📅</span>Volgende Earnings</div>
+          {earn ? (
+            <>
+              <div className="earn-days" style={{color: earnClr}}>{earn.days_until}d</div>
+              <div className="xsub">{earn.date}</div>
+              {earn.eps_estimate != null && (
+                <div className="xsub2">EPS est. ${earn.eps_estimate}</div>
+              )}
+            </>
+          ) : <div className="xsub">Geen datum bekend</div>}
+        </div>
+
+        {/* Sector peers */}
+        <div className="xcell">
+          <div className="xlbl"><span className="xlbl-icon">🏭</span>Sector Peers</div>
+          {d?.sector_peers?.length > 0 ? (
+            <div style={{display:'flex',flexWrap:'wrap',gap:'4px',marginTop:'2px'}}>
+              {d.sector_peers.slice(0,5).map(p => (
+                <span key={p} style={{
+                  background:'#151c2a',border:'1px solid #1e2a3a',
+                  borderRadius:'3px',padding:'2px 7px',
+                  fontSize:'11px',color:'#555f7a',
+                  fontFamily:'JetBrains Mono,monospace'
+                }}>{p}</span>
+              ))}
+            </div>
+          ) : <div className="xsub">Geen data</div>}
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 function ResultPage({ result, onReset }) {
   const { ticker, analyse, raw_data: d } = result
   const poor = [d?.pe_ratio,d?.eps,d?.debt_to_equity,d?.roe_percent,d?.profit_margin_percent,d?.revenue_growth_percent,d?.free_cash_flow_billions,d?.peg_ratio,d?.gross_margin_percent,d?.current_ratio].filter(v => v == null).length >= 5
@@ -513,6 +624,9 @@ function ResultPage({ result, onReset }) {
           })}
         </div>
       </div>
+
+      {/* Extra info */}
+      <ExtraInfoBalk d={d} />
 
       {/* AI */}
       <AIBlok ticker={ticker} analyse={analyse} />
