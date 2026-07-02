@@ -284,8 +284,16 @@ function ScoreRing({ score }) {
   )
 }
 
-function AIBlok({ ticker, analyse }) {
-  // Ondersteun zowel JSON object als string (fallback voor oude workflow versie)
+function berekenKoopscore(analyse, fundamenteleScore) {
+  if (!analyse || typeof analyse !== 'object') return null
+  const fs = fundamenteleScore != null ? Number(fundamenteleScore) : null
+  const ws = analyse.waardering_score != null ? Number(analyse.waardering_score) : null
+  const ts = analyse.timing_score != null ? Number(analyse.timing_score) : null
+  if (fs == null || ws == null || ts == null) return analyse.koopscore != null ? Number(analyse.koopscore) : null
+  return parseFloat((fs * 0.35 + ws * 0.40 + ts * 0.25).toFixed(1))
+}
+
+function AIBlok({ ticker, analyse, fundamenteleScore }) {
   if (!analyse) return null
   if (typeof analyse === 'string') {
     return (
@@ -298,7 +306,7 @@ function AIBlok({ ticker, analyse }) {
 
   const eo = analyse.eindoordeel?.trim().toUpperCase()
   const cfg = eo ? (OORDEEL[eo] || null) : null
-  const score = analyse.koopscore != null ? Number(analyse.koopscore) : null
+  const score = berekenKoopscore(analyse, fundamenteleScore)
 
   return (
     <div className="ai">
@@ -683,7 +691,7 @@ function ResultPage({ result, onReset }) {
       <ExtraInfoBalk d={{...d, ticker, peer_pe: analyse?.peer_pe}} />
 
       {/* AI */}
-      <AIBlok ticker={ticker} analyse={analyse} />
+      <AIBlok ticker={ticker} analyse={analyse} fundamenteleScore={d?.fundamentele_score} />
     </div>
   )
 }
