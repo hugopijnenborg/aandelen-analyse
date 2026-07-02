@@ -486,19 +486,17 @@ function ExtraInfoBalk({ d }) {
               <div className="ins-signal" style={{background: insSignalBg, color: insSignalClr}}>
                 {ins.signal === 'KOOP' ? '↑' : ins.signal === 'VERKOOP' ? '↓' : '—'} {ins.signal}
               </div>
-              <div className="xsub" style={{marginTop:6}}>{ins.buys} aankopen · {ins.sells} verkopen (6 mnd)</div>
-              {ins.recent?.length > 0 && (
-                <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:4}}>
-                  {ins.recent.map((t, i) => (
-                    <div key={i} style={{fontSize:11,color:'#555f7a',display:'flex',justifyContent:'space-between'}}>
-                      <span>{t.name?.split(' ').slice(-1)[0]}{t.title ? ` · ${t.title}` : ''}</span>
-                      <span style={{color: t.change > 0 ? '#22c55e' : '#ef4444', fontFamily:'JetBrains Mono,monospace'}}>
-                        {t.change > 0 ? '+' : ''}{t.change?.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+              <div style={{marginTop:12,display:'flex',gap:8}}>
+                <div style={{flex:1,background:'#22c55e18',border:'1px solid #22c55e30',borderRadius:6,padding:'8px 12px',textAlign:'center'}}>
+                  <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:'1.4rem',fontWeight:700,color:'#22c55e'}}>{ins.buys}</div>
+                  <div style={{fontSize:10,color:'#22c55e80',marginTop:2,textTransform:'uppercase',letterSpacing:'.08em'}}>aankopen</div>
                 </div>
-              )}
+                <div style={{flex:1,background:'#ef444418',border:'1px solid #ef444430',borderRadius:6,padding:'8px 12px',textAlign:'center'}}>
+                  <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:'1.4rem',fontWeight:700,color:'#ef4444'}}>{ins.sells}</div>
+                  <div style={{fontSize:10,color:'#ef444480',marginTop:2,textTransform:'uppercase',letterSpacing:'.08em'}}>verkopen</div>
+                </div>
+              </div>
+              <div style={{fontSize:10,color:'#333d52',marginTop:8}}>Laatste 6 maanden</div>
             </>
           ) : <div className="xsub">Geen data</div>}
         </div>
