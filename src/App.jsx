@@ -259,7 +259,7 @@ body{background:#080b0f;color:#d4d8e0;font-family:'Inter',sans-serif}
 document.head.appendChild(S)
 
 function BandBar({ m, val }) {
-  const colors = m.lager_is_beter ? [...ZONE_COLORS].reverse() : ZONE_COLORS
+  const colors = m._sectorColors || (m.lager_is_beter ? [...ZONE_COLORS].reverse() : ZONE_COLORS)
   const range = m.range
   const zones = m.zones
 
@@ -436,7 +436,7 @@ function AIBlok({ ticker, analyse, fundamenteleScore }) {
             <span className="khdr-icon">💡</span>
             <span className="khdr-title">Koopadvies</span>
           </div>
-          {analyse.richtprijs != null && (
+          {analyse.richtprijs != null && d?.current_price != null && analyse.richtprijs < d.current_price && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '10px',
               background: '#1a0f00', border: '1px solid #3a1800',
@@ -720,7 +720,8 @@ function ResultPage({ result, onReset }) {
             const peConfig = m.key === 'pe_ratio' ? getPeConfig(sector) : null
             const metricOverride = peConfig ? {
               ...m,
-              lager_is_beter: true,
+              lager_is_beter: false, // eigen kleurlogica hieronder
+              _sectorColors: ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'], // laag=goed, midden=gezond, hoog=duur
               range: [peConfig.zones[0] - 5, peConfig.zones[3] + 15],
               zones: peConfig.zones,
               bandLabels: peConfig.labels,
