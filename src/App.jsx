@@ -2,6 +2,16 @@ import { useState } from 'react'
 
 const WEBHOOK = 'https://hugop123.app.n8n.cloud/webhook/aandelen-analyse'
 
+// Frontend is gebouwd tegen dit contract. Bij een major-versiesprong (1.x -> 2.x)
+// kunnen veldnamen/betekenis wijzigen — dan liever een duidelijke waarschuwing
+// tonen dan stilzwijgend verkeerde data presenteren.
+const SUPPORTED_ENGINE_MAJOR = 1
+function isEngineVersionSupported(version) {
+  if (!version) return false
+  const major = parseInt(String(version).split('.')[0], 10)
+  return major === SUPPORTED_ENGINE_MAJOR
+}
+
 const METRICS = [
   { key: 'pe_ratio', label: 'P/E Ratio', suffix: 'x', desc: 'Koers / winst per aandeel',
     range: [-20, 60], zones: [0, 15, 25, 35], lager_is_beter: true,
@@ -84,12 +94,12 @@ function getPeConfig(sector) {
 
 const ZONE_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']
 
+// 4 buckets — moet exact matchen met CONFIG.adviesDrempels in scoring-engine.js
 const OORDEEL = {
-  'STERK KOOPMOMENT':       { color: '#22c55e', bg: 'linear-gradient(135deg,#021508,#031209)', border: '#14532d', icon: '🚀' },
-  'KOOPMOMENT':             { color: '#84cc16', bg: 'linear-gradient(135deg,#081800,#0a1c02)', border: '#1e3a05', icon: '✅' },
-  'NEUTRAAL':               { color: '#eab308', bg: 'linear-gradient(135deg,#161000,#141200)', border: '#302800', icon: '⚖️' },
-  'WACHT OP BETERE INSTAP': { color: '#f97316', bg: 'linear-gradient(135deg,#160600,#180800)', border: '#321400', icon: '⏳' },
-  'VERMIJD':                { color: '#ef4444', bg: 'linear-gradient(135deg,#160101,#180202)', border: '#300606', icon: '⛔' },
+  'STERKE KOOP': { color: '#22c55e', bg: 'linear-gradient(135deg,#021508,#031209)', border: '#14532d', icon: '🚀' },
+  'KOOP':        { color: '#84cc16', bg: 'linear-gradient(135deg,#081800,#0a1c02)', border: '#1e3a05', icon: '✅' },
+  'NEUTRAAL':    { color: '#eab308', bg: 'linear-gradient(135deg,#161000,#141200)', border: '#302800', icon: '⚖️' },
+  'VERMIJD':     { color: '#ef4444', bg: 'linear-gradient(135deg,#160101,#180202)', border: '#300606', icon: '⛔' },
 }
 
 function scoreToLabel(s) {
@@ -102,10 +112,19 @@ function scoreToLabel(s) {
 }
 
 function scoreColor(s) {
+  if (s == null) return '#3a3f52'
   if (s >= 8) return '#22c55e'
   if (s >= 6) return '#84cc16'
   if (s >= 4) return '#eab308'
   if (s >= 2) return '#f97316'
+  return '#ef4444'
+}
+
+function completenessColor(pct) {
+  if (pct == null) return '#3a3f52'
+  if (pct >= 95) return '#22c55e'
+  if (pct >= 80) return '#84cc16'
+  if (pct >= 60) return '#eab308'
   return '#ef4444'
 }
 
@@ -186,6 +205,16 @@ body{background:#080b0f;color:#d4d8e0;font-family:'Inter',sans-serif}
 .ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700}
 .ring-lbl{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#333d52}
 
+/* Sub-scores */
+.subscores{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#101520}
+.subcell{background:#0a0e16;padding:16px 18px;text-align:center}
+.sublbl{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#333d52;margin-bottom:6px}
+.subval{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700}
+
+/* Badges rij (hypergroei / betrouwbaarheid) */
+.badgerow{display:flex;gap:8px;flex-wrap:wrap;padding:14px 28px;background:#0a0e16;border-top:1px solid #101520}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 11px;border-radius:5px;letter-spacing:.03em}
+
 /* Samenvatting */
 .sam{padding:22px 28px;border-top:1px solid #101520;border-bottom:1px solid #101520;background:#0a0e16}
 .sam p{color:#7a8399;font-size:14px;line-height:1.85}
@@ -210,13 +239,25 @@ body{background:#080b0f;color:#d4d8e0;font-family:'Inter',sans-serif}
 .vhdr-title{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#818cf8}
 .vtext{color:#7a8399;font-size:14px;line-height:1.85}
 
-/* Koopadvies */
+/* Veiligheidsmarge blok (vervangt oude richtprijs/koopadvies blok) */
 .kblok{padding:20px 28px 26px;border-top:1px solid #101520;background:#0a0e16}
 .khdr{display:flex;align-items:center;gap:7px;margin-bottom:10px}
 .khdr-icon{font-size:.95rem}
 .khdr-title{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#f97316}
 .ktext{color:#8a93a8;font-size:14px;line-height:1.85}
 .ktext strong{color:#e0e4ee;font-weight:600}
+.margebadge{display:inline-flex;align-items:center;gap:10px;background:#1a0f00;border:1px solid #3a1800;border-radius:8px;padding:10px 16px;margin-bottom:14px}
+.margebadge-lbl{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#f97316;margin-right:10px}
+.margebadge-val{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700;color:#f97316}
+
+/* Data completeness */
+.dcwrap{padding:16px 28px;border-top:1px solid #101520;background:#0a0e16}
+.dchdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.dclbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#333d52}
+.dcval{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700}
+.dcbar{height:5px;background:#151c2a;border-radius:3px;overflow:hidden;margin-bottom:8px}
+.dcfill{height:100%;border-radius:3px;transition:width .3s}
+.dcmissing{font-size:11px;color:#444d62;line-height:1.6}
 
 /* Zoekpagina */
 .sp{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:radial-gradient(ellipse 80% 60% at 50% -10%,#1c0d00,#080b0f 55%)}
@@ -250,15 +291,12 @@ body{background:#080b0f;color:#d4d8e0;font-family:'Inter',sans-serif}
 .xval{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;margin-bottom:3px}
 .xsub{font-size:11px;color:#333d52}
 .xsub2{font-size:11px;color:#444d62;margin-top:2px}
-/* Analyst bar */
 .abar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:8px 0 4px;gap:1px}
 .abar-seg{height:100%;transition:width .3s}
 .abar-lbls{display:flex;justify-content:space-between;font-size:9px;font-family:'JetBrains Mono',monospace}
-/* Insider signal */
 .ins-signal{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.08em;margin-bottom:6px}
-/* Earnings countdown */
 .earn-days{font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;line-height:1;margin-bottom:3px}
-@media(max-width:640px){.mgrid{grid-template-columns:1fr}.mktgrid{grid-template-columns:1fr 1fr}.punten{grid-template-columns:1fr}.eobanner{flex-wrap:wrap}.xgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.mgrid{grid-template-columns:1fr}.mktgrid{grid-template-columns:1fr 1fr}.punten{grid-template-columns:1fr}.eobanner{flex-wrap:wrap}.xgrid{grid-template-columns:1fr 1fr}.subscores{grid-template-columns:1fr}}
 `
 document.head.appendChild(S)
 
@@ -318,7 +356,7 @@ function BandBar({ m, val }) {
 
 function ScoreRing({ score }) {
   const color = scoreColor(score)
-  const r = 27, circ = 2 * Math.PI * r, fill = (score / 10) * circ
+  const r = 27, circ = 2 * Math.PI * r, fill = score != null ? (score / 10) * circ : 0
   return (
     <div className="ring-wrap">
       <div className="ring">
@@ -327,45 +365,40 @@ function ScoreRing({ score }) {
           <circle cx="35" cy="35" r={r} fill="none" stroke={color} strokeWidth="5"
             strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" />
         </svg>
-        <div className="ring-num" style={{color}}>{score}</div>
+        <div className="ring-num" style={{color}}>{score != null ? score : '—'}</div>
       </div>
-      <div className="ring-lbl">koopscore</div>
+      <div className="ring-lbl">eindscore</div>
     </div>
   )
 }
 
-function berekenKoopscore(analyse, fundamenteleScore) {
-  if (!analyse || typeof analyse !== 'object') return null
-  const fs = fundamenteleScore != null ? Number(fundamenteleScore) : null
-  const ws = analyse.waardering_score != null ? Number(analyse.waardering_score) : null
-  const ts = analyse.timing_score != null ? Number(analyse.timing_score) : null
-  if (fs == null || ws == null || ts == null) return analyse.koopscore != null ? Number(analyse.koopscore) : null
-  return parseFloat((fs * 0.50 + ws * 0.25 + ts * 0.25).toFixed(1))
-}
+// AIBlok is nu een pure weergave-component: alle scores komen kant-en-klaar uit
+// result.beoordeling (n8n scoring engine). Geen berekeningen, geen blends.
+function AIBlok({ ticker, beoordeling }) {
+  if (!beoordeling) return null
 
-function AIBlok({ ticker, analyse, fundamenteleScore, currentPrice }) {
-  if (!analyse) return null
-  if (typeof analyse === 'string') {
-    return (
-      <div className="ai">
-        <div className="aihdr"><span className="aidot" /><span className="aititle">AI Beoordeling — {ticker}</span></div>
-        <div style={{padding:'24px 28px',color:'#7a8399',fontSize:'14px',lineHeight:'1.85',background:'#0a0e16',whiteSpace:'pre-wrap'}}>{analyse}</div>
-      </div>
-    )
-  }
+  const versionOk = isEngineVersionSupported(beoordeling.engineVersion)
 
-  const eo = analyse.eindoordeel?.trim().toUpperCase()
+  const eo = beoordeling.advies ? beoordeling.advies.trim().toUpperCase() : null
   const cfg = eo ? (OORDEEL[eo] || null) : null
-  const score = berekenKoopscore(analyse, fundamenteleScore)
+  const margePct = beoordeling.veiligheidsmarge != null ? Math.round(beoordeling.veiligheidsmarge * 100) : null
+  const dc = beoordeling.dataCompleteness
+  const dcColor = completenessColor(dc)
 
   return (
     <div className="ai">
       <div className="aihdr">
         <span className="aidot" />
-        <span className="aititle">AI Beoordeling — {ticker}</span>
+        <span className="aititle">Objectieve Beoordeling — {ticker}</span>
       </div>
 
-      {/* Eindoordeel + score */}
+      {!versionOk && (
+        <div style={{margin:'0', padding:'12px 24px', background:'#1a0f00', borderBottom:'1px solid #f97316', color:'#f97316', fontSize:'12px'}}>
+          ⚠️ Onbekende of niet-ondersteunde engine-versie ({beoordeling.engineVersion ?? 'onbekend'}). Contract kan afwijken — controleer of frontend en n8n-workflow op elkaar zijn afgestemd.
+        </div>
+      )}
+
+      {/* Eindoordeel + eindscore */}
       {cfg && (
         <div className="eobanner" style={{background: cfg.bg, borderBottom: `1px solid ${cfg.border}`}}>
           <span className="eoicon">{cfg.icon}</span>
@@ -373,28 +406,59 @@ function AIBlok({ ticker, analyse, fundamenteleScore, currentPrice }) {
             <div className="eosub" style={{color: cfg.color}}>Eindoordeel</div>
             <div className="eoverdict" style={{color: cfg.color}}>{eo}</div>
           </div>
-          {score != null && <ScoreRing score={score} />}
+          <ScoreRing score={beoordeling.eindscore} />
         </div>
       )}
 
-      {/* Samenvatting */}
-      {analyse.samenvatting && (
+      {/* Sub-scores: bedrijfskwaliteit / financiële gezondheid / waardering */}
+      <div className="subscores">
+        <div className="subcell">
+          <div className="sublbl">Bedrijfskwaliteit</div>
+          <div className="subval" style={{color: scoreColor(beoordeling.bedrijfskwaliteit)}}>
+            {beoordeling.bedrijfskwaliteit != null ? beoordeling.bedrijfskwaliteit : '—'}
+          </div>
+        </div>
+        <div className="subcell">
+          <div className="sublbl">Financiële Gezondheid</div>
+          <div className="subval" style={{color: scoreColor(beoordeling.financieleGezondheid)}}>
+            {beoordeling.financieleGezondheid != null ? beoordeling.financieleGezondheid : '—'}
+          </div>
+        </div>
+        <div className="subcell">
+          <div className="sublbl">Waardering</div>
+          <div className="subval" style={{color: scoreColor(beoordeling.waardering)}}>
+            {beoordeling.waardering != null ? beoordeling.waardering : '—'}
+          </div>
+        </div>
+      </div>
+
+      {/* Badges: hypergroei-correctie toegepast? */}
+      {beoordeling.isHypergroei && (
+        <div className="badgerow">
+          <span className="badge" style={{background:'#f9731620',color:'#f97316'}}>
+            ⚡ Hypergroei-correctie toegepast — P/E weegt minder mee in de waarderingsscore
+          </span>
+        </div>
+      )}
+
+      {/* Samenvatting (AI-toelichting, telt niet mee in de score) */}
+      {beoordeling.samenvatting && (
         <div className="sam">
-          <p>{analyse.samenvatting}</p>
+          <p>{beoordeling.samenvatting}</p>
         </div>
       )}
 
       {/* Sterke + zwakke punten */}
-      {((analyse.sterke_punten?.length > 0) || (analyse.aandachtspunten?.length > 0)) && (
+      {((beoordeling.sterkePunten?.length > 0) || (beoordeling.zwakkePunten?.length > 0)) && (
         <div className="punten">
-          {analyse.sterke_punten?.length > 0 && (
+          {beoordeling.sterkePunten?.length > 0 && (
             <div className="pblok">
               <div className="phdr">
                 <span className="phdr-icon">✅</span>
                 <span className="phdr-title" style={{color:'#22c55e'}}>Sterke punten</span>
               </div>
               <ul className="plist">
-                {analyse.sterke_punten.map((p, i) => (
+                {beoordeling.sterkePunten.map((p, i) => (
                   <li key={i} className="pitem">
                     <span className="pbullet" style={{background:'#22c55e20',color:'#22c55e'}}>+</span>
                     <span className="ptext">{p}</span>
@@ -403,14 +467,14 @@ function AIBlok({ ticker, analyse, fundamenteleScore, currentPrice }) {
               </ul>
             </div>
           )}
-          {analyse.aandachtspunten?.length > 0 && (
+          {beoordeling.zwakkePunten?.length > 0 && (
             <div className="pblok">
               <div className="phdr">
                 <span className="phdr-icon">⚠️</span>
                 <span className="phdr-title" style={{color:'#f97316'}}>Aandachtspunten</span>
               </div>
               <ul className="plist">
-                {analyse.aandachtspunten.map((p, i) => (
+                {beoordeling.zwakkePunten.map((p, i) => (
                   <li key={i} className="pitem">
                     <span className="pbullet" style={{background:'#f9731620',color:'#f97316'}}>!</span>
                     <span className="ptext">{p}</span>
@@ -422,36 +486,53 @@ function AIBlok({ ticker, analyse, fundamenteleScore, currentPrice }) {
         </div>
       )}
 
-      {/* Vooruitzichten */}
-      {analyse.vooruitzichten && (
+      {/* Vooruitzichten (AI-toelichting, telt niet mee in de score) */}
+      {beoordeling.vooruitzichten && (
         <div className="vblok">
           <div className="vhdr">
             <span className="vhdr-icon">🔭</span>
             <span className="vhdr-title">Vooruitzichten</span>
           </div>
-          <p className="vtext">{analyse.vooruitzichten}</p>
+          <p className="vtext">{beoordeling.vooruitzichten}</p>
         </div>
       )}
 
-      {/* Koopadvies */}
-      {analyse.koopadvies && (
+      {/* Veiligheidsmarge — géén koersdoel, géén fair value. Alleen een
+          aanbevolen buffer die hoort bij het risiconiveau van de eindscore. */}
+      {margePct != null && (
         <div className="kblok">
           <div className="khdr">
-            <span className="khdr-icon">💡</span>
-            <span className="khdr-title">Koopadvies</span>
+            <span className="khdr-icon">🛡️</span>
+            <span className="khdr-title">Aanbevolen veiligheidsmarge</span>
           </div>
-          {analyse.richtprijs != null && analyse.richtprijs < (currentPrice ?? Infinity) && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '10px',
-              background: '#1a0f00', border: '1px solid #3a1800',
-              borderRadius: '8px', padding: '10px 16px', marginBottom: '14px'
-            }}>
-              <span style={{fontSize: '11px', fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: '#f97316'}}>Richtprijs</span>
-              <span style={{fontFamily: 'JetBrains Mono, monospace', fontSize: '1.3rem', fontWeight: 700, color: '#f97316'}}>${analyse.richtprijs}</span>
-              <span style={{fontSize: '12px', color: '#664422'}}>Interessant vanaf deze koers</span>
+          <div className="margebadge">
+            <span className="margebadge-lbl">Marge</span>
+            <span className="margebadge-val">{margePct}%</span>
+          </div>
+          <p className="ktext">
+            Dit systeem berekent geen koersdoel of fair value. De veiligheidsmarge geeft
+            aan hoeveel risicobuffer past bij deze eindscore — hoe lager de score, hoe
+            groter de aanbevolen marge voordat je zelf een instapmoment overweegt.
+          </p>
+        </div>
+      )}
+
+      {/* Data completeness — betrouwbaarheid van de eindscore */}
+      {dc != null && (
+        <div className="dcwrap">
+          <div className="dchdr">
+            <span className="dclbl">Databetrouwbaarheid</span>
+            <span className="dcval" style={{color: dcColor}}>{dc}% — {beoordeling.dataCompletenessLabel}</span>
+          </div>
+          <div className="dcbar">
+            <div className="dcfill" style={{width: `${dc}%`, background: dcColor}} />
+          </div>
+          {beoordeling.ontbrekendeMetrics?.length > 0 && (
+            <div className="dcmissing">
+              Niet beschikbaar: {beoordeling.ontbrekendeMetrics.join(', ')} — gewichten zijn
+              automatisch herverdeeld over de resterende metrics.
             </div>
           )}
-          <p className="ktext">{analyse.koopadvies}</p>
         </div>
       )}
     </div>
@@ -486,7 +567,7 @@ export default function App() {
       <div className="si">
         <span className="sew">AI Fundamentele Analyse</span>
         <h1 className="stit">Aandelen<span>Analyse</span></h1>
-        <p className="ssub">Directe fundamentele analyse op basis van 15 metrics en recent nieuws.</p>
+        <p className="ssub">Objectieve fundamentele score op basis van 9 metrics en recent nieuws.</p>
         <div className="srow">
           <input className="sinp" type="text" placeholder="AAPL, MSFT, META..."
             value={ticker} onChange={e => setTicker(e.target.value.toUpperCase())}
@@ -497,9 +578,9 @@ export default function App() {
           </button>
         </div>
         {error && <p className="serr">{error}</p>}
-        {loading && <div className="sload"><span className="spinner" /><span className="sloadtxt">Data ophalen · Nieuws laden · Analyse via Claude...</span></div>}
+        {loading && <div className="sload"><span className="spinner" /><span className="sloadtxt">Data ophalen · Nieuws laden · Score berekenen...</span></div>}
         <div className="tags">
-          {['P/E','PEG','P/B','EPS','D/E','ROE','Brutomarge','Nettomarge','Omzetgroei','FCF','52W Range','Dividend','Nieuws'].map(t => (
+          {['P/E','EV/EBITDA','FCF Yield','EPS Groei','D/E','ROE','Nettomarge','Omzetgroei','FCF','52W Range','Dividend','Nieuws'].map(t => (
             <span key={t} className="tag">{t}</span>
           ))}
         </div>
@@ -657,7 +738,7 @@ function ExtraInfoBalk({ d }) {
 }
 
 function ResultPage({ result, onReset }) {
-  const { ticker, analyse, raw_data: d } = result
+  const { ticker, beoordeling, raw_data: d } = result
   const poor = [d?.pe_ratio,d?.eps,d?.debt_to_equity,d?.roe_percent,d?.profit_margin_percent,d?.revenue_growth_percent,d?.free_cash_flow_billions,d?.peg_ratio,d?.gross_margin_percent,d?.current_ratio].filter(v => v == null).length >= 5
   const ytdClr = d?.ytd_return_percent > 0 ? '#22c55e' : d?.ytd_return_percent < 0 ? '#ef4444' : '#444d62'
 
@@ -719,8 +800,8 @@ function ResultPage({ result, onReset }) {
         <div className="mgrid">
           {METRICS.map(m => {
             const val = d?.[m.key]
-            // Gebruik sectorspecifieke P/E config als beschikbaar
-            const sector = analyse?.sector
+            // Sector komt nu uit beoordeling.sector (engine geeft dit door), niet meer uit analyse.sector
+            const sector = beoordeling?.sector
             const peConfig = m.key === 'pe_ratio' ? getPeConfig(sector) : null
             const metricOverride = peConfig ? {
               ...m,
@@ -752,8 +833,8 @@ function ResultPage({ result, onReset }) {
       {/* Extra info */}
       <ExtraInfoBalk d={{...d, ticker, peer_pe: d?.sector_peers}} />
 
-      {/* AI */}
-      <AIBlok ticker={ticker} analyse={analyse} fundamenteleScore={d?.fundamentele_score} currentPrice={d?.current_price} />
+      {/* Objectieve score + AI-toelichting */}
+      <AIBlok ticker={ticker} beoordeling={beoordeling} />
     </div>
   )
 }
