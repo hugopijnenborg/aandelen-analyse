@@ -48,6 +48,10 @@ const METRICS = [
     range: [-10, 40], zones: [0, 1, 5, 20], lager_is_beter: false,
     bandLabels: ['Negatief', '0–1B', '1–5B', '5–20B', '> 20B'],
     score: v => v == null ? null : v > 20 ? 90 : v > 5 ? 75 : v > 0 ? 55 : v > -5 ? 30 : 10 },
+  { key: 'debt_to_fcf', label: 'Schuld / FCF', suffix: 'j', desc: 'Jaren om schuld af te lossen met FCF',
+    range: [0, 10], zones: [1, 2, 4, 7], lager_is_beter: true,
+    bandLabels: ['< 1j', '1–2j', '2–4j', '4–7j', '> 7j'],
+    score: v => v == null ? null : v < 0 ? 5 : v < 1 ? 90 : v < 2 ? 75 : v < 4 ? 55 : v < 7 ? 30 : 10 },
 ]
 
 const SECTOR_PE_RANGES = {
