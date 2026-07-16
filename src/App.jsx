@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Top25 from './Top25'
 
 const WEBHOOK = 'https://hugop123.app.n8n.cloud/webhook/aandelen-analyse'
 
@@ -144,6 +145,12 @@ S.textContent = `
 @keyframes ring{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#080b0f;color:#d4d8e0;font-family:'Inter',sans-serif}
+
+/* Navigatie tabs (Zoeken / Top 25) */
+.navbar{position:fixed;top:18px;right:18px;display:flex;gap:4px;background:#0a0e16;border:1px solid #151c2a;border-radius:9px;padding:4px;z-index:100}
+.navbtn{background:transparent;border:none;color:#444d62;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;letter-spacing:.02em;transition:all .15s;white-space:nowrap}
+.navbtn.active{background:#f97316;color:#fff}
+.navbtn:hover:not(.active){color:#f97316}
 
 /* Page */
 .page{max-width:960px;margin:0 auto;padding:2rem 1.5rem 5rem;animation:up .4s ease}
@@ -544,15 +551,19 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  // 'search' | 'top25' — welk tabblad actief is zolang er geen resultaat getoond wordt
+  const [view, setView] = useState('search')
 
-  async function go() {
-    if (!ticker.trim()) return
+  async function go(tickerOverride) {
+    const t = (tickerOverride ?? ticker).trim().toUpperCase()
+    if (!t) return
+    setTicker(t)
     setLoading(true); setError(null); setResult(null)
     try {
       const res = await fetch(WEBHOOK, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ ticker: ticker.trim().toUpperCase() }),
+        body: JSON.stringify({ ticker: t }),
       })
       if (!res.ok) throw new Error()
       setResult(await res.json())
@@ -560,32 +571,60 @@ export default function App() {
     finally { setLoading(false) }
   }
 
-  if (result) return <ResultPage result={result} onReset={() => { setResult(null); setTicker('') }} />
+  const nav = (
+    <div className="navbar">
+      <button
+        className={`navbtn${view === 'search' ? ' active' : ''}`}
+        onClick={() => { setResult(null); setView('search') }}
+      >Zoeken</button>
+      <button
+        className={`navbtn${view === 'top25' ? ' active' : ''}`}
+        onClick={() => { setResult(null); setView('top25') }}
+      >Top 25</button>
+    </div>
+  )
+
+  if (result) return (
+    <>
+      {nav}
+      <ResultPage result={result} onReset={() => { setResult(null); setTicker('') }} />
+    </>
+  )
+
+  if (view === 'top25') return (
+    <>
+      {nav}
+      <Top25 onSelectTicker={(t) => go(t)} />
+    </>
+  )
 
   return (
-    <div className="sp">
-      <div className="si">
-        <span className="sew">AI Fundamentele Analyse</span>
-        <h1 className="stit">Aandelen<span>Analyse</span></h1>
-        <p className="ssub">Objectieve fundamentele score op basis van 9 metrics en recent nieuws.</p>
-        <div className="srow">
-          <input className="sinp" type="text" placeholder="AAPL, MSFT, META..."
-            value={ticker} onChange={e => setTicker(e.target.value.toUpperCase())}
-            onKeyDown={e => e.key === 'Enter' && go()} disabled={loading} autoFocus />
-          <button className="sbtn" onClick={go} disabled={loading || !ticker.trim()}>
-            {loading ? <span className="spinnersm" /> : null}
-            {loading ? 'Laden...' : 'Analyseer →'}
-          </button>
-        </div>
-        {error && <p className="serr">{error}</p>}
-        {loading && <div className="sload"><span className="spinner" /><span className="sloadtxt">Data ophalen · Nieuws laden · Score berekenen...</span></div>}
-        <div className="tags">
-          {['P/E','EV/EBITDA','FCF Yield','EPS Groei','D/E','ROE','Nettomarge','Omzetgroei','FCF','52W Range','Dividend','Nieuws'].map(t => (
-            <span key={t} className="tag">{t}</span>
-          ))}
+    <>
+      {nav}
+      <div className="sp">
+        <div className="si">
+          <span className="sew">AI Fundamentele Analyse</span>
+          <h1 className="stit">Aandelen<span>Analyse</span></h1>
+          <p className="ssub">Objectieve fundamentele score op basis van 9 metrics en recent nieuws.</p>
+          <div className="srow">
+            <input className="sinp" type="text" placeholder="AAPL, MSFT, META..."
+              value={ticker} onChange={e => setTicker(e.target.value.toUpperCase())}
+              onKeyDown={e => e.key === 'Enter' && go()} disabled={loading} autoFocus />
+            <button className="sbtn" onClick={() => go()} disabled={loading || !ticker.trim()}>
+              {loading ? <span className="spinnersm" /> : null}
+              {loading ? 'Laden...' : 'Analyseer →'}
+            </button>
+          </div>
+          {error && <p className="serr">{error}</p>}
+          {loading && <div className="sload"><span className="spinner" /><span className="sloadtxt">Data ophalen · Nieuws laden · Score berekenen...</span></div>}
+          <div className="tags">
+            {['P/E','EV/EBITDA','FCF Yield','EPS Groei','D/E','ROE','Nettomarge','Omzetgroei','FCF','52W Range','Dividend','Nieuws'].map(t => (
+              <span key={t} className="tag">{t}</span>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
