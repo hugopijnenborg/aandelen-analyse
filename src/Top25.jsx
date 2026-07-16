@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 // live Finnhub via de n8n-webhook, geen database.
 const supabase = createClient(
   'https://onbzmtpynijcozokvigr.supabase.co',
-  'VUL_HIER_DE_ANON_KEY_IN' // Supabase project "Aandelen Dashboard" -> Settings -> API -> anon key
+  'sb_publishable_fWfpcG4ZyoN7oN20pavlYw_lK4BvU-E' // Supabase project "Aandelen Dashboard" -> Settings -> API -> anon key
 )
 
 const ADVIES_COLOR = {
